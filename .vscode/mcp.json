@@ -1,0 +1,10 @@
+{
+  "servers": {
+    "ai-sdlc": {
+      "command": "npx",
+      "args": [
+        "@aisdlc/mcp"
+      ]
+    }
+  }
+}

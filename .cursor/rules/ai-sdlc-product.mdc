@@ -1,0 +1,27 @@
+---
+description: Directives for SDD specifications editing, ProductShape artifacts, and Cybersecurity
+globs: specs/**, templates/**, product/**, security/**
+alwaysApply: false
+---
+
+# Product and SDD Specification Directives
+
+Canonical Reference: [`process/09_agent_protocols.md`](process/09_agent_protocols.md) and [`process/02_product_definition.md`](process/02_product_definition.md).
+
+## 1. Identifier Taxonomy and JSON Schemas
+Every generated or modified artifact must follow canonical naming and satisfy its schema in `schemas/`:
+- Product Actors: `ACT-[SUFFIX]` (`schemas/product/actor.schema.json`)
+- Use Cases: `UC-[SUFFIX]` (`schemas/product/use-case.schema.json`)
+- Functional Requirements: `FR-[SUFFIX]-[NUM3]` (`schemas/product/requirement.schema.json`)
+- Quality Requirements: `QR-[SUFFIX]` (`schemas/product/requirement.schema.json`)
+- Business Rules: `BR-[SUFFIX]` (`schemas/product/business-rule.schema.json`)
+- Threat Actors: `ACT-THREAT-[SUFFIX]` (`schemas/security/threat-actor.schema.json`)
+- Abuse Cases: `ABUSE-[SUFFIX]` (`schemas/security/abuse-case.schema.json`)
+- Security Requirements: `SEC-REQ-[SUFFIX]` (`schemas/security/security-req.schema.json`)
+
+## 2. "AI as Scribe" Protocol Rules
+- **Initial Status**: Every new artifact strictly starts with `status: draft`. Creating artifacts directly as `active` or `approved` is forbidden.
+- **Gherkin Acceptance Criteria**: In every `FR-*` requirement, include a ```gherkin block with tags `@<ID> @automated @regression` and at least one `Scenario Outline` with an `Examples` data table.
+- **Security Mitigations**: Every `SEC-REQ-*` must include negative Gherkin tests (`@security @mitigation`).
+- **Use Cases (User Story Structure)**: In every `UC-*`, the `1. Intent and Outcome` section must be written using the standard English structure: `As a <ACT-ID>... I want <action>... To <outcome>...`.
+- **Deterministic Validation**: Run `pnpm run verify:schemas` and `pnpm run verify:duplicates` before presenting the draft to the human reviewer.

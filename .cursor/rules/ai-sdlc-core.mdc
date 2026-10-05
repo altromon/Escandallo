@@ -1,0 +1,56 @@
+---
+description: Global canonical directives, 5 unbreakable commandments, and AI-SDLC pre-flight
+globs: *
+alwaysApply: true
+---
+
+# Global AI-SDLC Rules (Core)
+
+Canonical Reference: [`process/09_agent_protocols.md`](process/09_agent_protocols.md) and [`process/01_governance_and_roles.md`](process/01_governance_and_roles.md).
+
+## 1. The 5 Unbreakable Commandments of Agents | Los 5 Mandamientos Inquebrantables de los Agentes
+Every agent operating in this repository must strictly observe the following guardrails:
+1. **FORBIDDEN TO AUTO-APPROVE OR AUTO-MERGE | PROHIBIDO AUTO-APROBAR O AUTO-FUSIONAR**: Do not approve PRs or execute direct merges to protected branches (`main`, `release/*`). Approval is exclusively reserved for human reviewers.
+2. **FORBIDDEN TO INVENT PRODUCT OR ARCHITECTURE DECISIONS**: When facing ambiguity, formulate open questions (`open-questions`). Never assume undocumented requirements.
+3. **FORBIDDEN TO INTRODUCE DEPENDENCIES WITHOUT LICENSE INSPECTION**: Always verify `license-policy.yaml`. Viral dependencies (GPL/AGPL) or commercial paid dependencies (BSL/SSPL) are strictly forbidden without explicit human approval.
+4. **FORBIDDEN TO IGNORE CYBERSECURITY (SECURITY-BY-DEFAULT)**: Validate inputs, apply least privilege, and accompany every change with security tests (`SEC-TEST-*`). Suppressing linters or tests to force a green pipeline is prohibited.
+5. **MANDATORY CRYPTOGRAPHIC CITATION**: Link specifications using immutable identifiers and Unix LF-normalized SHA-256 hashes.
+
+## 2. Pre-Flight Verification Commands
+Before finalizing changes or proposing commits:
+- Pre-flight with auto-fix: `pnpm run check:fix` (or `npx aisdlc check --fix`)
+- Full verification: `pnpm run verify:all` (or `npx aisdlc verify all`)
+- Unit tests: `pnpm test`
+- Strict typing: `pnpm run typecheck`
+
+## 3. Git 4-Tier Hierarchy
+- Tier 1: `main` (Production)
+- Tier 2: `release/vX.Y.Z` (Frozen release)
+- Tier 3: `feat/<FEAT-ID>-<slug>` / `bug/<BUG-ID>-<slug>` (Feature)
+- Tier 4: `task/<PARENT-ID>/<TSK-ID>-<slug>` (Atomic task)
+
+## 4. Specialized Roles Mapping
+| Role | Mission (summary) |
+| :--- | :--- |
+| `agent-product-analyst` | ProductShape artifacts (`ACT-*`, `UC-*`, `FR-*`, `QR-*`, `BR-*`); status starts `draft`. |
+| `agent-threat-modeler` | STRIDE/OWASP threat triad (`ACT-THREAT-*`, `ABUSE-*`, `SEC-REQ-*`). |
+| `agent-system-architect` | Modular arc42 + NAF v4 architecture (`CMP-*`, Mermaid diagrams, `ADR-*`). |
+| `agent-qa-engineer` | FAILING BDD/Gherkin suites before `agent-developer` writes code. |
+| `agent-developer` | Atomic tasks from `tasks.md`; respects autonomy mode; runs `pnpm run check:fix` + `pnpm run verify:all`. |
+| `agent-security-auditor` | Adversarial PR security audit, SAST, secrets, and CVSS v3.1 evaluation. |
+| `agent-compliance-checker` | SPDX license compliance audit against `license-policy.yaml`. |
+| `agent-expert-user` | Bimodal MVP evaluation (design) and functional validation against `UC-*` and `FR-*` (pre-PR). |
+| `agent-code-reviewer` | PR audit (SOLID, DRY, YAGNI): `[BLOCKING]` / `[CLEAN_CODE_SUGGESTION]` / `[COMPLIANT]`. |
+| `agent-devops` | CI/CD, Docker, IaC only — **FORBIDDEN** to touch `src/` or `packages/*/src/`. |
+
+## 5. Task Autonomy Modes (`tasks.md`)
+- 🟢 **`AUTONOMOUS`**: Low risk. Implement directly, omit handoff block.
+- 🟡 **`HUMAN_REVIEW_PLAN`**: Medium risk. Emit Workflow Handoff block, wait for approval.
+- 🟠 **`AMBIGUOUS`**: Blocked. Request human clarification.
+- 🔴 **`HIGH_RISK_MANUAL`**: Critical risk. Human-only execution.
+
+## 6. Workflow Handoff Protocol and Human Action Window | Ventana de Acción Humana
+- **Conditional Activation**:
+  * 🟢 **`AUTONOMOUS`** (or PR/CI supervision): **OMITTED**. Do not request or emit interactive handoff.
+  * 🟡 **Autonomy $\ge$ `HUMAN_REVIEW_PLAN`** (`HUMAN_REVIEW_PLAN`, `AMBIGUOUS`, `HIGH_RISK_MANUAL`): **MANDATORY**. Emit Workflow Handoff block compliant with [`templates/workflow/agent-handoff.template.md`](templates/workflow/agent-handoff.template.md) and **STOP**.
+- **Content**: Declare completed deliverables, recommend next role(s), provide suggested invocation prompt, and **keep the Human Action Window open for the human user to take action** (review, edit by hand, pause/reroute, or delegate).

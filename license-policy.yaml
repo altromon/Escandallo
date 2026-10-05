@@ -1,0 +1,44 @@
+# ==============================================================================
+# AI-SDLC: Open Source License Compliance & Governance Policy
+# ==============================================================================
+version: "1.0"
+project: "Standard AI-SDLC Project"
+default_action: "DENY"
+
+categories:
+  permissive_free:
+    action: "ALLOW"
+    description: "Permissive commercial use licenses. Attribution only required."
+    spdx_identifiers:
+      - "MIT"
+      - "Apache-2.0"
+      - "BSD-2-Clause"
+      - "BSD-3-Clause"
+      - "ISC"
+      - "Unlicense"
+      - "CC0-1.0"
+      - "0BSD"
+
+  weak_copyleft_conditional:
+    action: "REVIEW_REQUIRED"
+    description: "Allowed only as dynamically linked decoupled libraries."
+    spdx_identifiers:
+      - "LGPL-2.1-only"
+      - "LGPL-3.0-only"
+      - "MPL-2.0"
+
+  strong_copyleft_viral:
+    action: "DENY"
+    description: "Forbidden due to viral copyleft forcing source code disclosure."
+    spdx_identifiers:
+      - "GPL-2.0-only"
+      - "GPL-3.0-only"
+      - "AGPL-3.0-only"
+      - "AGPL-3.0-or-later"
+
+  commercial_acquisition_required:
+    action: "COMMERCIAL_APPROVAL_REQUIRED"
+    description: "Source-available code requiring commercial license for SaaS deployment."
+    spdx_identifiers:
+      - "SSPL-1.0"
+      - "BSL-1.1"
