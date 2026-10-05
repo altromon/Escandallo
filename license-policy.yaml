@@ -18,6 +18,8 @@ categories:
       - "Unlicense"
       - "CC0-1.0"
       - "0BSD"
+      - "BlueOak-1.0.0"
+      - "Python-2.0"
 
   weak_copyleft_conditional:
     action: "REVIEW_REQUIRED"

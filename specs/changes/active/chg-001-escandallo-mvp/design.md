@@ -119,13 +119,13 @@ citations:
     digest: sha256:ddb801eacbba3ae06b68086f6b1bb00c43885fcbb715960d7e1e4de3c35ca8ee
     comment: 'Citación de architecture-decision-record (Topología de Despliegue Ultra-Rentable y Segura: Cloudflare Edge WAF + Monolito Modular Dockerizado en VPS Europeo)'
   - id: ADR-002-MODULAR-MONOLITH-STACK
-    digest: sha256:68e3a39a5fc3d96b0c880f8a527723f5befa2942e1906a07c313578f9f9be008
+    digest: sha256:8124bc96c46d93f34b2da553039a72263d303b9549feff18f1bd3c79b09301e6
     comment: Citación de architecture-decision-record (Arquitectura de Monolito Modular Full-Stack en TypeScript (Node.js LTS + Fastify/React + PostgreSQL) Alineada con license-policy.yaml)
   - id: ADR-003-MULTITENANT-RLS-AND-ATOMIC-QUOTA
     digest: sha256:e515c71fe55a4f03dcb65d44c2c54383d336879580c1c994e15f9aaf0f12171d
     comment: Citación de architecture-decision-record (Aislamiento Multi-Tenant con PostgreSQL Row-Level Security (RLS) y Bloqueo Pesimista para Cuota Freemium de Stripe)
   - id: ADR-004-EXACT-DECIMAL-AND-CASCADE-ENGINE
-    digest: sha256:fe8b7efa15a79295404fa906d54947ecc691bfe31b8a0024404bbced60c5884a
+    digest: sha256:e15a718668d17c8ae6d80221f3439b79a6c2422dfe7b9550efb76a4381be6e8c
     comment: Citación de architecture-decision-record (Aritmética Decimal Exacta (decimal.js / NUMERIC) y Recálculo Transaccional Síncrono en Cascada con Snapshots Inmutables)
   - id: ADR-005-DUAL-OBSERVABILITY-AND-SAFE-DOCUMENTS
     digest: sha256:870bf57801a9a66e066bd5b0dd219405a4b4ea65d1966c3d26dcb2c75f8854d5
@@ -137,13 +137,15 @@ citations:
 ## 1. Mapeo Arquitectónico y Enclave Zero Trust
 El incremento `CHG-001-ESCANDALLO-MVP` materializa el sistema raíz `CMP-ESCANDALLO-SYS-001` y sus 6 subsistemas de Nivel 2 (`CMP-WEB-UI-001`, `CMP-IAM-TENANT-001`, `CMP-COST-ENGINE-001`, `CMP-DOC-IO-001`, `CMP-BILLING-STRIPE-001`, `CMP-OBS-TELEMETRY-001`) distribuidos en los 3 enclaves (`SEC-ENC-EDGE-WAF-001`, `SEC-ENC-APP-CORE-001`, `SEC-ENC-DATA-OBS-001`).
 
-## 2. Contratos de Datos e Interfaces (`src/`)
-- `src/modules/iam/`: `verifySessionAndRls`, `authorizeCrossCenterCopy`, `checkTenantRateLimit`, `preventRoleMassAssignment`.
-- `src/modules/cost-engine/`: `calculateProductUnitCost`, `calculateStaffUnitCost`, `calculateOverheadRatePerMinute`, `calculateEscandalloService`, `evaluateMarginSemaphore`, `applyCostMutationWithCascade`, `archiveCostOrService`.
-- `src/modules/doc-io/`: `inspectAndParseExcelCatalog`, `sanitizeSpreadsheetCell`, `exportExecutiveReport`.
-- `src/modules/billing/`: `enforceFreemiumQuotaWithLock`, `verifyAndProcessStripeWebhook`, `createStripeSubscriptionCheckout`.
-- `src/modules/observability/`: `setHotLogLevel`, `redactTelemetryRecord`, `exportTelemetryBundle`.
-- `src/modules/web-ui/`: `validateResponsiveViewportLayout`, `evaluateDynamicRecipeBuilderA11y`.
+## 2. Contratos de Datos e Interfaces en C# (`src/Escandallo.Core/Modules/`)
+- `src/Escandallo.Core/Modules/Iam/IamTenantGuard.cs`: `AuthorizeCrossCenterCopy`, `VerifySessionAndRls`, `CheckTenantRateLimit`.
+- `src/Escandallo.Core/Modules/CostEngine/CostCatalogCalculator.cs`: `CalculateOverheadRatePerMinute`, `CalculateProductUnitCost`, `CalculateStaffUnitCost` (usando `System.Decimal` de 128 bits).
+- `src/Escandallo.Core/Modules/CostEngine/EscandalloCalculator.cs`: `CalculateEscandalloService`, `EvaluateMarginSemaphore`.
+- `src/Escandallo.Core/Modules/CostEngine/CascadeHistoryService.cs`: `ApplyCostMutationWithCascade`, `ArchiveCostOrService`.
+- `src/Escandallo.Core/Modules/DocIo/DocumentIoService.cs`: `ExportExecutiveReport`, `InspectAndParseExcelCatalog`, `SanitizeSpreadsheetCell`.
+- `src/Escandallo.Core/Modules/Billing/BillingQuotaService.cs`: `EnforceFreemiumQuotaWithLock`, `VerifyAndProcessStripeWebhook`.
+- `src/Escandallo.Core/Modules/Observability/TelemetryService.cs`: `SetHotLogLevel`, `ExportTelemetryBundle`, `RedactTelemetryRecord`.
+- `src/Escandallo.Core/Modules/WebUi/AccessibilityValidator.cs`: `EvaluateDynamicRecipeBuilderA11y`, `ValidateResponsiveViewportLayout`.
 
 ## 3. Protocolos de Manejo de Errores y Mitigación
 - Errores de dominio aritmético, divisores cero, mermas $> 100\%$ o archivos `.xlsx` maliciosos devuelven `HTTP 422 Unprocessable Entity` con código tipado.

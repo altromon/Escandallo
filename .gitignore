@@ -1,10 +1,16 @@
 # Dependencies
 node_modules/
 
-# Build outputs
+# .NET and Build outputs
+bin/
+obj/
 dist/
 build/
 coverage/
+TestResults/
+.vs/
+*.user
+*.suo
 
 # Environment variables and secrets
 .env

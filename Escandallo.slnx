@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Escandallo.Core/Escandallo.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Escandallo.UnitTests/Escandallo.UnitTests.csproj" />
+  </Folder>
+</Solution>
