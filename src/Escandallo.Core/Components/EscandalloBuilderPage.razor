@@ -1,0 +1,22 @@
+@using Microsoft.AspNetCore.Components
+@namespace Escandallo.Core.Components
+
+<section aria-labelledby="builder-heading">
+    <h1 id="builder-heading">Constructor Dinámico de Escandallo y Simulador de PVP</h1>
+    <div class="recipe-dynamic-list" role="region" aria-label="Líneas de productos del servicio (1:N)" data-recipe-count="@RecipeLinesCount">
+        <button type="button" class="touch-target-44" aria-label="Añadir producto a la receta">+ Añadir Producto</button>
+        <button type="button" class="touch-target-44" aria-label="Duplicar escandallo (M4)">Duplicar Escandallo</button>
+        <button type="button" class="touch-target-44" aria-label="Archivar escandallo (M1)">Archivar Escandallo</button>
+    </div>
+    <div class="pvp-simulator-panel" role="status" aria-live="polite" aria-atomic="true">
+        <span class="pvp-recomendado">PVP Recomendado (@RecommendedPvp.ToString("0.00") €) vs PVP Comercial Fijado (@CommercialPvp.ToString("0.00") €)</span>
+        <span class="margin-semaphore-badge" data-semaphore="@SemaphoreState">@SemaphoreState</span>
+    </div>
+</section>
+
+@code {
+    [Parameter] public int RecipeLinesCount { get; set; } = 3;
+    [Parameter] public decimal CommercialPvp { get; set; } = 32.00m;
+    [Parameter] public decimal RecommendedPvp { get; set; } = 23.96m;
+    [Parameter] public string SemaphoreState { get; set; } = "OPTIMO";
+}

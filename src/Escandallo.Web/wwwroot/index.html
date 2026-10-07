@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escandallo SaaS — Gestión de Rentabilidad para Centros de Belleza</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <div class="escandallo-app-shell" role="application" aria-label="Plataforma SaaS de Escandallos para Centros de Estética">
+    <header class="topbar" role="banner">
+      <div>
+        <strong style="font-size:1.2rem;">Escandallo SaaS</strong>
+        <span id="planBadge" class="badge badge-OPTIMO" style="margin-left:0.5rem;">PLAN FREE (2/2 activos)</span>
+      </div>
+      <nav aria-label="Selector de centro y acciones globales" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <label for="centerSelect" style="font-weight:600;">Centro:</label>
+        <select id="centerSelect" aria-label="Seleccionar Centro Activo"></select>
+        <button class="btn btn-secondary" id="btnSeedReset" type="button">Cargar Plantilla Semilla 1-Clic (M4)</button>
+        <button class="btn btn-secondary" id="btnCloneCenter" type="button">Clonar Catálogo (M4)</button>
+        <button class="btn" id="btnOpenPaywall" type="button">Suscripción Stripe (14,90 €/mes)</button>
+      </nav>
+    </header>
+
+    <main class="container" role="main">
+      <section class="card" aria-labelledby="paramsHeading">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+          <h2 id="paramsHeading" style="margin:0;">1. Parámetros Globales y Equivalencias de Dosis de Cabina (OQ-01 / M5)</h2>
+          <button class="btn" id="btnSaveParams" type="button">Guardar Parámetros y Recalcular</button>
+        </div>
+        <div class="param-grid" id="paramInputs" style="margin-top:0.85rem;"></div>
+        <h3 style="margin:1rem 0 0.5rem 0; font-size:1rem;">Equivalencias Configurables de Cabina (ml por unidad física)</h3>
+        <div class="param-grid" id="doseInputs"></div>
+        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; background:#f1f5f9; padding:0.6rem; border-radius:0.5rem;">
+          <strong>Asistente de Dosis (M5):</strong>
+          <input id="assistCount" type="number" step="1" value="2" style="width:80px;" aria-label="Número de unidades" />
+          <select id="assistUnit" aria-label="Unidad de cabina">
+            <option value="pulsacion">Pulsación</option>
+            <option value="gota">Gota</option>
+            <option value="cucharadita">Cucharadita</option>
+            <option value="ampolla_vial">Ampolla / Vial Monodosis</option>
+          </select>
+          <button class="btn btn-secondary" id="btnCalcDose" type="button">Calcular ml y Aplicar a Producto</button>
+          <span id="assistResult" style="font-weight:700;">= 4.00 ml</span>
+        </div>
+      </section>
+
+      <div class="grid-2">
+        <section class="card" aria-labelledby="catalogHeading">
+          <h2 id="catalogHeading" style="margin-top:0;">2. Catálogo de Costes (Productos, Personal, Gastos Fijos)</h2>
+          <div role="tablist" aria-label="Categorías de Costes" style="display:flex; gap:0.5rem; margin-bottom:0.85rem; flex-wrap:wrap;">
+            <button role="tab" aria-selected="true" class="btn" id="tabBtnProd" onclick="switchCatalogTab('prod')">Productos</button>
+            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnStaff" onclick="switchCatalogTab('staff')">Personal</button>
+            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnOvh" onclick="switchCatalogTab('ovh')">Gastos Generales</button>
+            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnXlsx" onclick="switchCatalogTab('xlsx')">Importar .xlsx Seguro</button>
+          </div>
+
+          <div id="catalogPaneProd">
+            <table id="productsTable">
+              <thead><tr><th>Producto</th><th>Envase (ml)</th><th>Precio (€)</th><th>Dosis (ml)</th><th>Coste/Serv (+Merma)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div style="display:flex; gap:0.5rem; margin-top:0.65rem; flex-wrap:wrap;">
+              <input id="newProdName" placeholder="Nombre producto" aria-label="Nombre producto" />
+              <input id="newProdMl" type="number" step="1" value="200" style="width:90px;" aria-label="Tamaño ml" />
+              <input id="newProdPrice" type="number" step="0.5" value="15" style="width:90px;" aria-label="Precio EUR" />
+              <input id="newProdDose" type="number" step="0.05" value="2" style="width:90px;" aria-label="Dosis ml" />
+              <button class="btn" id="btnAddProd" type="button">Añadir / Actualizar Producto</button>
+            </div>
+          </div>
+
+          <div id="catalogPaneStaff" style="display:none;">
+            <table id="staffTable">
+              <thead><tr><th>Categoría / Rol</th><th>Sueldo Mensual (€)</th><th>Coste / Minuto (€)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div style="display:flex; gap:0.5rem; margin-top:0.65rem; flex-wrap:wrap;">
+              <input id="newStaffRole" placeholder="Rol (ej. Tecnico)" value="Tecnico" aria-label="Rol de personal" />
+              <input id="newStaffSalary" type="number" step="50" value="1100" style="width:120px;" aria-label="Sueldo mensual EUR" />
+              <button class="btn" id="btnSaveStaff" type="button">Guardar Sueldo Personal</button>
+            </div>
+          </div>
+
+          <div id="catalogPaneOvh" style="display:none;">
+            <table id="ovhTable">
+              <thead><tr><th>Concepto Gasto Fijo</th><th>Importe Mensual (€)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div style="display:flex; gap:0.5rem; margin-top:0.65rem; flex-wrap:wrap;">
+              <input id="newOvhName" placeholder="Concepto (ej. Local)" value="Local" aria-label="Concepto gasto fijo" />
+              <input id="newOvhAmount" type="number" step="25" value="800" style="width:120px;" aria-label="Importe mensual EUR" />
+              <button class="btn" id="btnSaveOvh" type="button">Guardar Gasto General</button>
+            </div>
+          </div>
+
+          <div id="catalogPaneXlsx" style="display:none;">
+            <p style="margin-top:0;">Validador OOXML Anti-XXE / ZipBomb / DDE (<code>SEC-REQ-XLSX-001</code>):</p>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <input id="xlsxCellInput" value="=CMD|' /C calc'!A0" aria-label="Celda de prueba DDE" style="flex:1;" />
+              <button class="btn" id="btnInspectXlsx" type="button">Inspeccionar y Sanitizar Celda</button>
+            </div>
+            <p id="xlsxInspectResult" style="font-weight:600; margin-top:0.5rem;"></p>
+          </div>
+
+          <div id="staffAndOverheadSummary" style="margin-top:0.85rem; font-size:0.9rem; color:var(--muted);"></div>
+        </section>
+
+        <section class="card" aria-labelledby="escandallosHeading">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <h2 id="escandallosHeading" style="margin:0;">3. Constructor Dinámico 1:N y Semáforo de Margen (OQ-02 / M2 / M3)</h2>
+          </div>
+
+          <div style="background:#f8fafc; border:1px solid var(--border); border-radius:0.5rem; padding:0.85rem; margin:0.75rem 0;">
+            <h3 style="margin:0 0 0.5rem 0; font-size:1rem;">Crear / Simular Nuevo Escandallo con Receta 1:N</h3>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <input id="svcName" placeholder="Nombre del servicio" value="Radiofrecuencia Facial" aria-label="Nombre del servicio" />
+              <input id="svcDuration" type="number" step="5" value="45" style="width:90px;" aria-label="Duración en minutos" />
+              <select id="svcRole" aria-label="Rol de personal asignado"></select>
+              <input id="svcPvp" type="number" step="0.5" value="35.00" style="width:100px;" aria-label="PVP Comercial Fijado EUR" />
+            </div>
+            <div style="margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+              <select id="recipeProdSelect" aria-label="Producto para receta"></select>
+              <input id="recipeProdMl" type="number" step="0.1" value="2" style="width:85px;" aria-label="Dosis ml en receta" />
+              <button class="btn btn-secondary" id="btnAddRecipeLine" type="button">+ Añadir Línea 1:N</button>
+              <button class="btn" id="btnCreateEscandallo" type="button">Guardar Nuevo Escandallo</button>
+            </div>
+            <div id="draftRecipeList" style="margin-top:0.4rem; font-size:0.88rem; color:var(--muted);"></div>
+          </div>
+
+          <div id="semaphoreLiveRegion" role="status" aria-live="polite" aria-atomic="true" style="margin:0.5rem 0; font-weight:600;"></div>
+          <div id="escandallosList" style="display:grid; gap:1rem;"></div>
+        </section>
+      </div>
+
+      <div class="grid-2">
+        <section class="card" aria-labelledby="historyHeading">
+          <h2 id="historyHeading" style="margin-top:0;">4. Historial Inmutable de Costes (BR-RECALC-HISTORY-001)</h2>
+          <div id="historyContainer">Sin cambios registrados en esta sesión.</div>
+        </section>
+
+        <section class="card" aria-labelledby="obsHeading">
+          <h2 id="obsHeading" style="margin-top:0;">5. Consola de Observabilidad RBAC y Nivel en Caliente (FR-OBS-001)</h2>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+            <select id="obsRole" aria-label="Rol de actor para observabilidad">
+              <option value="ACT-MAINTAINER-001">ACT-MAINTAINER-001 (Mantenedor)</option>
+              <option value="ACT-ESTHETIC-USER-001">ACT-ESTHETIC-USER-001 (Usuario Centro)</option>
+            </select>
+            <select id="obsLevel" aria-label="Nivel de log objetivo">
+              <option value="DEBUG">DEBUG (Auto-revert TTL 60m)</option>
+              <option value="INFO">INFO</option>
+            </select>
+            <button class="btn btn-secondary" id="btnApplyObs" type="button">Aplicar Nivel y Sanitizar Log</button>
+          </div>
+          <p id="obsResult" style="margin:0.6rem 0 0 0; font-size:0.9rem;"></p>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal-backdrop" id="cascadeModal" role="dialog" aria-modal="true" aria-labelledby="cascadeTitle">
+      <div class="card" style="max-width:480px; width:100%;">
+        <h3 id="cascadeTitle" style="margin-top:0;">Confirmar Recálculo en Cascada (M3)</h3>
+        <p id="cascadeMessage"></p>
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+          <button class="btn btn-secondary" id="btnCancelCascade" type="button">Cancelar</button>
+          <button class="btn" id="btnConfirmCascade" type="button">Confirmar y Guardar Historial</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="paywallModal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
+      <div class="card" style="max-width:520px; width:100%;">
+        <h3 id="paywallTitle" style="margin-top:0;">Cuota Freemium (HTTP 402 — 2 Escandallos Activos Gratis)</h3>
+        <p>Tu centro dispone de <strong>2 escandallos activos gratuitos</strong> con recálculos ilimitados. Para activar más escandallos, archiva uno existente sin perder su histórico (M1) o contrata <strong>Escandallo PRO en Stripe</strong>:</p>
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+          <button class="btn" type="button" onclick="checkoutStripe('PLAN_MENSUAL_EUR', 14.90)">Suscripción Mensual (14,90 €/mes)</button>
+          <button class="btn" type="button" onclick="checkoutStripe('PLAN_ANUAL_EUR', 149.00)">Suscripción Anual (149,00 €/año)</button>
+        </div>
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+          <button class="btn btn-secondary" id="btnClosePaywall" type="button">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentState = null;
+    let pendingAction = null;
+    let draftRecipe = [{ productName: 'Cleasing Milk', cantidadServicioMl: 2 }, { productName: 'Colagen Mask', cantidadServicioMl: 4 }];
+
+    async function loadState(centerId = 'center-madrid-01') {
+      const res = await fetch(`/api/state?centerId=${encodeURIComponent(centerId)}`);
+      currentState = await res.json();
+      renderAll();
+    }
+
+    async function saveTenant(tenantObj) {
+      await fetch('/api/state/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tenantObj)
+      });
+      await loadState(tenantObj.centerId);
+    }
+
+    window.switchCatalogTab = function(tab) {
+      ['prod', 'staff', 'ovh', 'xlsx'].forEach(k => {
+        const pane = document.getElementById('catalogPane' + k.charAt(0).toUpperCase() + k.slice(1));
+        const btn = document.getElementById('tabBtn' + k.charAt(0).toUpperCase() + k.slice(1));
+        const active = k === tab;
+        pane.style.display = active ? 'block' : 'none';
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        btn.className = active ? 'btn' : 'btn btn-secondary';
+      });
+    };
+
+    function openCascadeModal(affectedCount, summaryText, onConfirm) {
+      document.getElementById('cascadeMessage').textContent =
+        `Este cambio recalculará ${affectedCount} escandallos activos (${summaryText}). Se generará un registro en el historial inmutable.`;
+      pendingAction = onConfirm;
+      document.getElementById('cascadeModal').classList.add('open');
+    }
+
+    function renderDraftRecipe() {
+      document.getElementById('draftRecipeList').innerHTML =
+        '<strong>Receta actual (' + draftRecipe.length + ' productos):</strong> ' +
+        draftRecipe.map((r, i) => `${r.productName} (${r.cantidadServicioMl} ml) <button type="button" onclick="removeDraftLine(${i})" style="min-height:24px;min-width:24px;padding:0 6px;">×</button>`).join(' · ');
+    }
+
+    window.removeDraftLine = function(idx) {
+      draftRecipe.splice(idx, 1);
+      renderDraftRecipe();
+    };
+
+    function renderAll() {
+      const t = currentState.tenant;
+      const cat = currentState.catalog;
+      const sel = document.getElementById('centerSelect');
+      sel.innerHTML = currentState.centers.map(c =>
+        `<option value="${c.centerId}" ${c.centerId === t.centerId ? 'selected' : ''}>${c.centerName} (${c.subscriptionPlan})</option>`
+      ).join('');
+
+      const badge = document.getElementById('planBadge');
+      badge.textContent = `PLAN ${t.subscriptionPlan} (${currentState.activeCount} activos)`;
+      badge.className = `badge ${t.subscriptionPlan === 'PRO' ? 'badge-OPTIMO' : 'badge-ALERTA'}`;
+
+      const p = t.parameters;
+      document.getElementById('paramInputs').innerHTML = `
+        <label>IVA (%): <input id="p_iva" type="number" step="0.01" value="${p.iva}" /></label>
+        <label>Beneficio Obj.: <input id="p_ben" type="number" step="0.01" value="${p.beneficio}" /></label>
+        <label>Horas/día: <input id="p_hd" type="number" step="1" value="${p.horasDia}" /></label>
+        <label>Días/mes: <input id="p_dm" type="number" step="1" value="${p.diasMes}" /></label>
+        <label>Minutos/mes: <input id="p_mm" type="number" step="10" value="${p.minutosMensuales}" /></label>
+        <label>Coef. Empresa: <input id="p_ce" type="number" step="0.01" value="${p.coeficienteEmpresa}" /></label>
+        <label>Merma (%): <input id="p_me" type="number" step="0.01" value="${p.mermaPct}" /></label>
+      `;
+
+      const d = t.doseEquivalencesMl || { gota: 0.05, pulsacion: 2.0, cucharadita: 5.0, ampolla_vial: 2.0 };
+      document.getElementById('doseInputs').innerHTML = Object.entries(d).map(([k, v]) =>
+        `<label>${k} (ml): <input data-dose="${k}" type="number" step="0.01" value="${v}" /></label>`
+      ).join('');
+
+      document.querySelector('#productsTable tbody').innerHTML = t.products.map(prod => {
+        const c = cat.products[prod.name];
+        return `<tr>
+          <td><strong>${prod.name}</strong></td>
+          <td>${prod.cantidadMl} ml</td>
+          <td>${prod.precioCompra.toFixed(2)} €</td>
+          <td>${prod.cantidadPorServicioMl} ml</td>
+          <td>${c ? c.costeConMerma.toFixed(4) : '0.0000'} €</td>
+        </tr>`;
+      }).join('');
+
+      document.querySelector('#staffTable tbody').innerHTML = t.staff.map(s =>
+        `<tr><td><strong>${s.role}</strong></td><td>${s.sueldoMensual.toFixed(2)} €</td><td>${cat.staff[s.role].costeMinuto.toFixed(4)} €/min</td></tr>`
+      ).join('');
+
+      document.querySelector('#ovhTable tbody').innerHTML = t.overheads.map(o =>
+        `<tr><td><strong>${o.concepto}</strong></td><td>${o.importeMensual.toFixed(2)} €</td></tr>`
+      ).join('');
+
+      document.getElementById('svcRole').innerHTML = t.staff.map(s => `<option value="${s.role}">${s.role}</option>`).join('');
+      document.getElementById('recipeProdSelect').innerHTML = t.products.map(pr => `<option value="${pr.name}">${pr.name}</option>`).join('');
+      renderDraftRecipe();
+
+      document.getElementById('staffAndOverheadSummary').innerHTML =
+        `<strong>Tarifa Gastos Generales:</strong> ${cat.overheadRatePerMinute.toFixed(4)} €/min · ` +
+        t.staff.map(s => `<strong>${s.role}:</strong> ${cat.staff[s.role].costeMinuto.toFixed(4)} €/min`).join(' · ');
+
+      const listEl = document.getElementById('escandallosList');
+      listEl.innerHTML = currentState.escandallos.map(item => {
+        const e = item.record;
+        const c = item.calculation;
+        const s = item.semaphore;
+        const icon = s.status === 'OPTIMO' ? '🟢 OPTIMO' : (s.status === 'ALERTA' ? '🟡 ALERTA' : '🔴 CRITICO');
+        return `<article class="card" style="border-left: 6px solid ${s.status === 'OPTIMO' ? '#16a34a' : (s.status === 'ALERTA' ? '#ca8a04' : '#dc2626')};">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <div>
+              <strong>${e.name}</strong> (${e.duracionMinutos} min · ${e.staffRole})
+              ${e.archived ? '<span class="badge badge-CRITICO">ARCHIVADO (M1)</span>' : ''}
+            </div>
+            <span class="badge badge-${s.status}">${icon} · Beneficio Real ${s.netProfit.toFixed(2)} € (${(s.realMarginRate * 100).toFixed(1)}%)</span>
+          </div>
+          <p style="margin:0.5rem 0;">
+            Coste Total: <strong>${c.costeTotal.toFixed(2)} €</strong> (Prod: ${c.costeProductos.toFixed(2)} € · Pers: ${c.costePersonal.toFixed(2)} € · Gastos: ${c.costeGastosGenerales.toFixed(2)} €) |
+            Beneficio Obj.: <strong>${c.beneficioNeto.toFixed(2)} €</strong> |
+            PVP Calculado Recomendado: <strong>${c.pvpRecomendado.toFixed(2)} €</strong>
+          </p>
+          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <label>PVP Comercial Fijado (€):
+              <input type="number" step="0.5" value="${e.pvpComercialFijado}" onchange="updatePvp('${e.id}', this.value)" style="width:110px;" />
+            </label>
+            <button class="btn btn-secondary" type="button" onclick="duplicateEscandallo('${e.id}')">Duplicar (M4)</button>
+            <button class="btn btn-secondary" type="button" onclick="toggleArchive('${e.id}')">${e.archived ? 'Restaurar' : 'Archivar (M1)'}</button>
+            <a class="btn" href="/api/reports/pdf?centerId=${t.centerId}&serviceId=${e.id}" target="_blank">Descargar PDF</a>
+            <a class="btn" href="/api/reports/xlsx?centerId=${t.centerId}&serviceId=${e.id}" target="_blank">Descargar XLSX</a>
+          </div>
+        </article>`;
+      }).join('');
+
+      const hist = t.costHistory || [];
+      document.getElementById('historyContainer').innerHTML = hist.length === 0
+        ? 'Sin cambios registrados en esta sesión.'
+        : `<ul>${hist.map(h => `<li><strong>${h.costItemId}</strong>: ${h.previousValue} → ${h.newValue} (${h.changedAtIso})</li>`).join('')}</ul>`;
+    }
+
+    window.updatePvp = async function(id, newVal) {
+      const t = structuredClone(currentState.tenant);
+      const item = t.escandallos.find(x => x.id === id);
+      if (!item) return;
+      item.pvpComercialFijado = parseFloat(newVal) || 0;
+      await saveTenant(t);
+      const updatedItem = currentState.escandallos.find(x => x.record.id === id);
+      if (updatedItem) {
+        document.getElementById('semaphoreLiveRegion').textContent =
+          `Simulador PVP actualizado para ${updatedItem.record.name}: Estado Semáforo ${updatedItem.semaphore.status} (Beneficio neto ${updatedItem.semaphore.netProfit.toFixed(2)} €).`;
+      }
+    };
+
+    window.toggleArchive = async function(id) {
+      const t = structuredClone(currentState.tenant);
+      const item = t.escandallos.find(x => x.id === id);
+      if (!item) return;
+      if (item.archived && t.subscriptionPlan === 'FREE' && currentState.activeCount >= 2) {
+        document.getElementById('paywallModal').classList.add('open');
+        return;
+      }
+      item.archived = !item.archived;
+      await saveTenant(t);
+    };
+
+    window.duplicateEscandallo = async function(id) {
+      const t = structuredClone(currentState.tenant);
+      if (t.subscriptionPlan === 'FREE' && currentState.activeCount >= 2) {
+        document.getElementById('paywallModal').classList.add('open');
+        return;
+      }
+      const src = t.escandallos.find(x => x.id === id);
+      if (!src) return;
+      const copy = structuredClone(src);
+      copy.id = 'esc-' + Date.now();
+      copy.name = src.name + ' (Copia)';
+      t.escandallos.push(copy);
+      await saveTenant(t);
+    };
+
+    window.checkoutStripe = async function(planId, amount) {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ centerId: currentState.tenant.centerId, planId, clientDeclaredAmount: amount })
+      });
+      if (res.ok) {
+        document.getElementById('paywallModal').classList.remove('open');
+        await loadState(currentState.tenant.centerId);
+      }
+    };
+
+    document.getElementById('centerSelect').addEventListener('change', e => loadState(e.target.value));
+    document.getElementById('btnOpenPaywall').addEventListener('click', () => document.getElementById('paywallModal').classList.add('open'));
+
+    document.getElementById('btnSeedReset').addEventListener('click', async () => {
+      const centerId = currentState.tenant.centerId;
+      await loadState(centerId);
+    });
+
+    document.getElementById('btnCloneCenter').addEventListener('click', async () => {
+      const t = structuredClone(currentState.tenant);
+      t.centerId = 'center-clon-' + Math.floor(Math.random() * 900 + 100);
+      t.centerName = t.centerName + ' (Clon M4)';
+      await saveTenant(t);
+    });
+
+    document.getElementById('btnCalcDose').addEventListener('click', async () => {
+      const unitType = document.getElementById('assistUnit').value;
+      const unitsCount = parseFloat(document.getElementById('assistCount').value) || 1;
+      const customMl = currentState.tenant.doseEquivalencesMl[unitType] || null;
+      const res = await fetch('/api/dose/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unitType, unitsCount, customMl })
+      });
+      const data = await res.json();
+      document.getElementById('assistResult').textContent = `= ${data.ml.toFixed(2)} ml`;
+      document.getElementById('newProdDose').value = data.ml;
+      document.getElementById('recipeProdMl').value = data.ml;
+    });
+
+    document.getElementById('btnSaveParams').addEventListener('click', () => {
+      const t = structuredClone(currentState.tenant);
+      openCascadeModal(currentState.activeCount, 'Cambio en Parámetros Globales / Equivalencias de Dosis', async () => {
+        const oldBen = t.parameters.beneficio;
+        const newBen = parseFloat(document.getElementById('p_ben').value) || 0.25;
+        if (oldBen !== newBen) {
+          t.costHistory.push({ costItemId: 'PARAM:Beneficio', previousValue: oldBen, newValue: newBen, changedAtIso: new Date().toISOString() });
+        }
+        t.parameters = {
+          iva: parseFloat(document.getElementById('p_iva').value) || 0.21,
+          beneficio: newBen,
+          horasDia: parseFloat(document.getElementById('p_hd').value) || 8,
+          diasMes: parseFloat(document.getElementById('p_dm').value) || 22,
+          minutosMensuales: parseInt(document.getElementById('p_mm').value, 10) || 10560,
+          coeficienteEmpresa: parseFloat(document.getElementById('p_ce').value) || 1.35,
+          mermaPct: parseFloat(document.getElementById('p_me').value) || 0.03
+        };
+        document.querySelectorAll('[data-dose]').forEach(inp => {
+          t.doseEquivalencesMl[inp.getAttribute('data-dose')] = parseFloat(inp.value) || 1;
+        });
+        await saveTenant(t);
+      });
+    });
+
+    document.getElementById('btnAddProd').addEventListener('click', () => {
+      const name = document.getElementById('newProdName').value.trim();
+      if (!name) return;
+      const ml = parseFloat(document.getElementById('newProdMl').value) || 200;
+      const price = parseFloat(document.getElementById('newProdPrice').value) || 15;
+      const dose = parseFloat(document.getElementById('newProdDose').value) || 2;
+      openCascadeModal(currentState.activeCount, `Producto ${name} (${price.toFixed(2)} €)`, async () => {
+        const t = structuredClone(currentState.tenant);
+        const existing = t.products.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (existing) {
+          if (existing.precioCompra !== price) {
+            t.costHistory.push({ costItemId: existing.name, previousValue: existing.precioCompra, newValue: price, changedAtIso: new Date().toISOString() });
+          }
+          existing.cantidadMl = ml;
+          existing.precioCompra = price;
+          existing.cantidadPorServicioMl = dose;
+        } else {
+          t.products.push({ name, cantidadMl: ml, precioCompra: price, cantidadPorServicioMl: dose });
+          t.costHistory.push({ costItemId: name, previousValue: 0, newValue: price, changedAtIso: new Date().toISOString() });
+        }
+        await saveTenant(t);
+      });
+    });
+
+    document.getElementById('btnSaveStaff').addEventListener('click', () => {
+      const role = document.getElementById('newStaffRole').value.trim();
+      const salary = parseFloat(document.getElementById('newStaffSalary').value) || 1000;
+      if (!role) return;
+      openCascadeModal(currentState.activeCount, `Personal ${role} (${salary.toFixed(2)} €/mes)`, async () => {
+        const t = structuredClone(currentState.tenant);
+        const existing = t.staff.find(s => s.role.toLowerCase() === role.toLowerCase());
+        if (existing) {
+          if (existing.sueldoMensual !== salary) {
+            t.costHistory.push({ costItemId: `STAFF:${existing.role}`, previousValue: existing.sueldoMensual, newValue: salary, changedAtIso: new Date().toISOString() });
+          }
+          existing.sueldoMensual = salary;
+        } else {
+          t.staff.push({ role, sueldoMensual: salary });
+          t.costHistory.push({ costItemId: `STAFF:${role}`, previousValue: 0, newValue: salary, changedAtIso: new Date().toISOString() });
+        }
+        await saveTenant(t);
+      });
+    });
+
+    document.getElementById('btnSaveOvh').addEventListener('click', () => {
+      const name = document.getElementById('newOvhName').value.trim();
+      const amount = parseFloat(document.getElementById('newOvhAmount').value) || 250;
+      if (!name) return;
+      openCascadeModal(currentState.activeCount, `Gasto General ${name} (${amount.toFixed(2)} €/mes)`, async () => {
+        const t = structuredClone(currentState.tenant);
+        const existing = t.overheads.find(o => o.concepto.toLowerCase() === name.toLowerCase());
+        if (existing) {
+          if (existing.importeMensual !== amount) {
+            t.costHistory.push({ costItemId: `OVH:${existing.concepto}`, previousValue: existing.importeMensual, newValue: amount, changedAtIso: new Date().toISOString() });
+          }
+          existing.importeMensual = amount;
+        } else {
+          t.overheads.push({ concepto: name, importeMensual: amount });
+          t.costHistory.push({ costItemId: `OVH:${name}`, previousValue: 0, newValue: amount, changedAtIso: new Date().toISOString() });
+        }
+        await saveTenant(t);
+      });
+    });
+
+    document.getElementById('btnInspectXlsx').addEventListener('click', async () => {
+      const rawCellText = document.getElementById('xlsxCellInput').value;
+      const res = await fetch('/api/catalog/inspect-xlsx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ xmlPayload: '<workbook/>', rawCellText })
+      });
+      const data = await res.json();
+      document.getElementById('xlsxInspectResult').textContent =
+        `Veredicto XML: ${data.verdict} (HTTP ${data.httpStatus}) | Celda Sanitizada: ${data.escapedCell}`;
+    });
+
+    document.getElementById('btnAddRecipeLine').addEventListener('click', () => {
+      const productName = document.getElementById('recipeProdSelect').value;
+      const cantidadServicioMl = parseFloat(document.getElementById('recipeProdMl').value) || 1;
+      draftRecipe.push({ productName, cantidadServicioMl });
+      renderDraftRecipe();
+    });
+
+    document.getElementById('btnCreateEscandallo').addEventListener('click', async () => {
+      const t = structuredClone(currentState.tenant);
+      if (t.subscriptionPlan === 'FREE' && currentState.activeCount >= 2) {
+        document.getElementById('paywallModal').classList.add('open');
+        return;
+      }
+      t.escandallos.push({
+        id: 'esc-' + Date.now(),
+        name: document.getElementById('svcName').value.trim() || 'Servicio Personalizado',
+        duracionMinutos: parseInt(document.getElementById('svcDuration').value, 10) || 45,
+        staffRole: document.getElementById('svcRole').value || 'Tecnico',
+        pvpComercialFijado: parseFloat(document.getElementById('svcPvp').value) || 35.0,
+        archived: false,
+        recipe: draftRecipe.length > 0 ? structuredClone(draftRecipe) : [{ productName: 'Cleasing Milk', cantidadServicioMl: 2 }]
+      });
+      await saveTenant(t);
+    });
+
+    document.getElementById('btnApplyObs').addEventListener('click', async () => {
+      const actorRole = document.getElementById('obsRole').value;
+      const targetLevel = document.getElementById('obsLevel').value;
+      const res = await fetch('/api/observability/loglevel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actorRole, targetLevel, sampleLogLine: 'Auth header Authorization: Bearer sk_live_999999999' })
+      });
+      const data = await res.json();
+      document.getElementById('obsResult').textContent =
+        `HTTP ${data.status}: ${data.state} (${data.ttl}) | Log Sanitizado: ${data.sanitizedLog}`;
+    });
+
+    document.getElementById('btnCancelCascade').addEventListener('click', () => {
+      pendingAction = null;
+      document.getElementById('cascadeModal').classList.remove('open');
+    });
+
+    document.getElementById('btnConfirmCascade').addEventListener('click', async () => {
+      document.getElementById('cascadeModal').classList.remove('open');
+      if (pendingAction) await pendingAction();
+      pendingAction = null;
+    });
+
+    document.getElementById('btnClosePaywall').addEventListener('click', () => {
+      document.getElementById('paywallModal').classList.remove('open');
+    });
+
+    loadState();
+  </script>
+</body>
+</html>

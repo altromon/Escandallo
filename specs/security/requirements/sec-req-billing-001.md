@@ -1,10 +1,10 @@
 ---
 id: SEC-REQ-BILLING-001
 type: security-requirement
-title: "Control Atómico Anti-Race-Condition de Cuota Freemium y Verificación HMAC de Webhooks Stripe"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: Control Atómico Anti-Race-Condition de Cuota Freemium y Verificación HMAC de Webhooks Stripe
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: security
 priority: critical
 derives-from:
@@ -12,18 +12,19 @@ derives-from:
   - UC-SUBSCRIPTION-001
 mitigates-abuse-case:
   - ABUSE-QUOTA-BYPASS-001
-enforced-in-enclave: "SEC-ENC-APP-CORE-001"
-owasp-asvs: "V11.1, V13.2"
-stride-category: "Tampering"
+enforced-in-enclave: SEC-ENC-APP-CORE-001
+owasp-asvs: V11.1, V13.2
+stride-category: Tampering
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@SEC-REQ-BILLING-001"
-  - "@automated"
-  - "@regression"
+  - '@SEC-REQ-BILLING-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Security Requirement: Control Atómico Anti-Race-Condition de Cuota Freemium y Verificación HMAC de Webhooks Stripe
 
@@ -63,6 +64,19 @@ Feature: Integridad transaccional de cuota freemium y autenticidad de eventos de
       | invoice.paid                   | cabecera_ausente            | 5             | 400         |
       | checkout.session.completed     | timestamp_expirado_replay   | 600           | 400         |
       | customer.subscription.updated  | event_id_duplicado          | 15            | 200         |
+
+  @idempotence
+  Scenario Outline: Análisis de frontera en límite gratuito de escandallos activos (N-1, N, N+1) y ventana temporal HMAC (300s)
+    Given un centro en plan gratuito tiene <activos_actuales> escandallos en estado "active" y recibe una transición con timestamp de <edad_hmac_seg> segundos
+    When se evalúa la guardia transaccional con bloqueo pesimista FOR UPDATE
+    Then el resultado de la operación es "<resultado_guardia>" con código HTTP <codigo_http>
+
+    Examples:
+      | activos_actuales | edad_hmac_seg | resultado_guardia                | codigo_http |
+      | 0                | 299           | TRANSICION_ACTIVO_PERMITIDA      | 201         |
+      | 1                | 300           | TRANSICION_ACTIVO_PERMITIDA      | 201         |
+      | 2                | 100           | BLOQUEADO_LIMITE_GRATUITO_2      | 402         |
+      | 1                | 301           | RECHAZADO_VENTANA_HMAC_EXPIRADA  | 400         |
 ```
 
 ## 3. Revision History
@@ -70,3 +84,10 @@ Feature: Integridad transaccional de cuota freemium y autenticidad de eventos de
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-05 | agent-threat-modeler | Especificación inicial de protección anti-race-condition y verificación de webhooks Stripe. |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

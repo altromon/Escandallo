@@ -1,14 +1,14 @@
 ---
 id: ADR-003-MULTITENANT-RLS-AND-ATOMIC-QUOTA
 type: architecture-decision-record
-title: "Aislamiento Multi-Tenant con PostgreSQL Row-Level Security (RLS) y Bloqueo Pesimista para Cuota Freemium de Stripe"
+title: Aislamiento Multi-Tenant con PostgreSQL Row-Level Security (RLS) y Bloqueo Pesimista para Cuota Freemium de Stripe
 status: proposed
-version: "1.0.0"
-schema-version: "1.0"
+version: 1.0.0
+schema-version: '1.0'
 deciders:
-  - "agent-system-architect"
-  - "agent-threat-modeler"
-decision-date: "2026-10-05"
+  - agent-system-architect
+  - agent-threat-modeler
+decision-date: '2026-10-05'
 affects-components:
   - CMP-IAM-TENANT-001
   - CMP-COST-ENGINE-001
@@ -16,6 +16,7 @@ affects-components:
 supersedes: null
 superseded-by: null
 ---
+
 
 # ADR-003: Aislamiento Multi-Tenant con PostgreSQL Row-Level Security (RLS) y Bloqueo Pesimista para Cuota Freemium de Stripe
 
@@ -63,3 +64,10 @@ Se elige la **Opción A (Defensa en Profundidad: Validación en Capa de Aplicaci
 | Version | Date | Deciders | Decision Status | Reference (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
 | **1.0.0** | 2026-10-05 | agent-system-architect | Formal decision proposal | ARCH-INIT-001 |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Integración de incremento de entrega chg-001-escandallo-mvp | chg-001-escandallo-mvp |

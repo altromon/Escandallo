@@ -28,3 +28,16 @@ Feature: Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verific
       | inyeccion_payload_malformado | /api/centers/costs           | 400         |
       | manipulacion_idor_tenant     | /api/centers/other-id/report | 403         |
       | falsificacion_firma_stripe   | /api/webhooks/stripe         | 400         |
+
+  @security @mitigation
+  Scenario Outline: Análisis de frontera en ventana temporal de firma de webhook (300s) y límite de peticiones por minuto
+    Given una petición entrante llega con antigüedad de firma de <edad_seg> segundos y contador de peticiones en <num_peticiones> por minuto
+    When el filtro perimetral de seguridad evalúa los umbrales configurados (máximo 300s y 30 peticiones/min)
+    Then el servidor responde con código HTTP <codigo_http>
+
+    Examples:
+      | edad_seg | num_peticiones | codigo_http |
+      | 299      | 29             | 200         |
+      | 300      | 30             | 200         |
+      | 301      | 10             | 400         |
+      | 50       | 31             | 429         |

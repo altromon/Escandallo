@@ -1,0 +1,37 @@
+rules:
+  - id: escandallo-csharp-xxe-dtd-parse-forbidden
+    languages: [csharp]
+    severity: ERROR
+    message: "SEC-REQ-XLSX-001: DtdProcessing.Parse está prohibido al procesar ficheros OOXML (.xlsx). Utilice DtdProcessing.Prohibit y XmlResolver = null."
+    pattern: DtdProcessing.Parse
+    metadata:
+      cwe: "CWE-611: Improper Restriction of XML External Entity Reference"
+      requirement: "SEC-REQ-XLSX-001"
+
+  - id: escandallo-csharp-weak-hash-md5-sha1
+    languages: [csharp]
+    severity: ERROR
+    message: "SEC-REQ-BILLING-001 / QR-SEC-001: Prohibido usar MD5 o SHA1 para firmas o integridad. Utilice HMACSHA256 y CryptographicOperations.FixedTimeEquals."
+    pattern-either:
+      - pattern: MD5.Create()
+      - pattern: SHA1.Create()
+      - pattern: HMACMD5.HashData(...)
+      - pattern: HMACSHA1.HashData(...)
+    metadata:
+      cwe: "CWE-328: Use of Weak Hash"
+      requirement: "SEC-REQ-BILLING-001"
+
+  - id: escandallo-csharp-binary-float-in-financial-engine
+    languages: [csharp]
+    severity: WARNING
+    message: "ADR-004 / BR-CALC-FORMULAS-001: Prohibido usar float o double en el motor de cálculo de costes y escandallos. Utilice exclusivamente System.Decimal (128-bit)."
+    paths:
+      include:
+        - src/Escandallo.Core/CostCatalogService.cs
+        - src/Escandallo.Core/EscandalloCalculatorService.cs
+        - src/Escandallo.Core/CascadeHistoryService.cs
+    pattern-either:
+      - pattern: float $VAR = ...;
+      - pattern: double $VAR = ...;
+    metadata:
+      requirement: "BR-CALC-FORMULAS-001"

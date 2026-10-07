@@ -33,3 +33,16 @@ Feature: Integridad transaccional de cuota freemium y autenticidad de eventos de
       | invoice.paid                   | cabecera_ausente            | 5             | 400         |
       | checkout.session.completed     | timestamp_expirado_replay   | 600           | 400         |
       | customer.subscription.updated  | event_id_duplicado          | 15            | 200         |
+
+  @idempotence
+  Scenario Outline: Análisis de frontera en límite gratuito de escandallos activos (N-1, N, N+1) y ventana temporal HMAC (300s)
+    Given un centro en plan gratuito tiene <activos_actuales> escandallos en estado "active" y recibe una transición con timestamp de <edad_hmac_seg> segundos
+    When se evalúa la guardia transaccional con bloqueo pesimista FOR UPDATE
+    Then el resultado de la operación es "<resultado_guardia>" con código HTTP <codigo_http>
+
+    Examples:
+      | activos_actuales | edad_hmac_seg | resultado_guardia                | codigo_http |
+      | 0                | 299           | TRANSICION_ACTIVO_PERMITIDA      | 201         |
+      | 1                | 300           | TRANSICION_ACTIVO_PERMITIDA      | 201         |
+      | 2                | 100           | BLOQUEADO_LIMITE_GRATUITO_2      | 402         |
+      | 1                | 301           | RECHAZADO_VENTANA_HMAC_EXPIRADA  | 400         |

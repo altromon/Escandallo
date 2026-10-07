@@ -41,7 +41,7 @@ graph TD
     subgraph HostVPS["RES-VPS-EU-001: VPS Cloud Europeo (Hetzner CX22/CX32 - 2 a 4 vCPU / 4 a 8 GB RAM / NVMe)"]
         subgraph EnclaveApp["Enclave: SEC-ENC-APP-CORE-001 (Docker Network: app_dmz_net)"]
             Caddy["Contenedor Caddy 2 Reverse Proxy (mTLS Origin Pull)"]
-            NodeApp["Contenedor Node.js 22 LTS: CMP-ESCANDALLO-SYS-001 (<= 512 MB RAM)"]
+            DotNetApp["Contenedor .NET 8/9 LTS (ASP.NET Core + Blazor): CMP-ESCANDALLO-SYS-001 (<= 512 MB RAM)"]
         end
 
         subgraph EnclaveData["Enclave: SEC-ENC-DATA-OBS-001 (Docker Network: data_restricted_net - internal: true)"]
@@ -57,8 +57,8 @@ graph TD
     Clients -->|"HTTPS (TLS 1.3)"| WAF
     StripeNet -->|"HTTPS + Stripe-Signature"| WAF
     WAF -->|"mTLS (Puerto 443 Exclusivo IPs Cloudflare)"| Caddy
-    Caddy -->|"HTTP Interno"| NodeApp
-    NodeApp -->|"TCP 5432 (Red Interna Sin Salida a Internet)"| Postgres
+    Caddy -->|"HTTP Interno"| DotNetApp
+    DotNetApp -->|"TCP 5432 (Red Interna Sin Salida a Internet)"| Postgres
     BackupWorker -->|"pg_dump Diario"| Postgres
     BackupWorker -->|"HTTPS S3 API (Snapshots Cifrados)"| R2
 ```

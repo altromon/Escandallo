@@ -30,3 +30,15 @@ Feature: Blindaje del rol mantenedor, ofuscación de secretos en modo DEBUG y pr
       | mass_assignment_registro_rol         | role=maintainer                          | ignorar_campo_y_denegar_privilegio        | 403         |
       | acceso_endpoint_exportacion_logs     | GET /admin/observability/export          | denegar_acceso_rbac_no_autorizado         | 403         |
       | inyeccion_crlf_en_campo_busqueda     | servicio\r\n{"level":"INFO","faked":1}   | escapar_saltos_de_linea_en_json_estruct   | 400         |
+
+  Scenario Outline: Verificación de frontera de ofuscación inmutable en todos los niveles de severidad y caducidad TTL de DEBUG
+    Given el nivel de severidad activo en el servidor es "<nivel_activo>" y han transcurrido <minutos_transcurridos> minutos
+    When se procesa un evento con el campo sensible "<campo_sensible>"
+    Then el valor serializado en el log es "<valor_serializado>" y el nivel efectivo pasa a ser "<nivel_efectivo>"
+
+    Examples:
+      | nivel_activo | minutos_transcurridos | campo_sensible   | valor_serializado | nivel_efectivo |
+      | DEBUG        | 59                    | authorization    | [REDACTED]        | DEBUG          |
+      | DEBUG        | 60                    | cookie           | [REDACTED]        | DEBUG          |
+      | DEBUG        | 61                    | stripe_signature | [REDACTED]        | INFO           |
+      | SECURITY     | 120                   | iban             | [REDACTED]        | SECURITY       |

@@ -26,3 +26,15 @@ Feature: Interfaz Web Accesible (WCAG 2.1 AA) y Adaptativa para PC, Tablet y Mó
       | tablet      | portrait    | 768      | 1024    |
       | tablet      | landscape   | 1024     | 768     |
       | pc          | landscape   | 1440     | 900     |
+
+  Scenario Outline: Verificación de fronteras de contraste visual (4.5:1) y área táctil mínima (44x44 px) en controles de UI
+    Given un componente interactivo de la interfaz tiene relación de contraste <contraste> y tamaño táctil de <lado_px> px
+    When se ejecuta el validador de conformidad WCAG 2.1 Nivel AA
+    Then el resultado de validación de accesibilidad es "<resultado_a11y>"
+
+    Examples:
+      | contraste | lado_px | resultado_a11y            |
+      | 4.4       | 44      | RECHAZADO_CONTRASTE_BAJO  |
+      | 4.5       | 44      | APROBADO_WCAG_AA          |
+      | 7.1       | 48      | APROBADO_WCAG_AA          |
+      | 5.0       | 43      | RECHAZADO_TARGET_PEQUENO  |

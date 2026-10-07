@@ -1,10 +1,10 @@
 ---
 id: SEC-REQ-DOS-001
 type: security-requirement
-title: "Rate Limiting por Inquilino, Cuotas de Concurrencia en Exportación PDF/Excel y Límites de Recálculo"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: Rate Limiting por Inquilino, Cuotas de Concurrencia en Exportación PDF/Excel y Límites de Recálculo
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: security
 priority: high
 derives-from:
@@ -13,18 +13,19 @@ derives-from:
   - UC-EXEC-REPORT-001
 mitigates-abuse-case:
   - ABUSE-DOS-CASCADE-001
-enforced-in-enclave: "SEC-ENC-EDGE-WAF-001"
-owasp-asvs: "V1.11, V11.1, V13.1"
-stride-category: "Denial of Service"
+enforced-in-enclave: SEC-ENC-EDGE-WAF-001
+owasp-asvs: V1.11, V11.1, V13.1
+stride-category: Denial of Service
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@SEC-REQ-DOS-001"
-  - "@automated"
-  - "@regression"
+  - '@SEC-REQ-DOS-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Security Requirement: Rate Limiting por Inquilino, Cuotas de Concurrencia en Exportación PDF/Excel y Límites de Recálculo
 
@@ -62,6 +63,20 @@ Feature: Protección contra denegación de servicio asimétrica en recálculos y
       | actualizacion_coste_con_cascada      | 30 mutaciones por minuto         | 45 mutaciones en 20s       | 429         | WARN          |
       | exportacion_informe_ejecutivo_xlsx   | 10 exportaciones por minuto      | 15 exportaciones en 30s    | 429         | SECURITY      |
       | guardado_receta_escandallo_m3        | 100 lineas maximas por servicio  | 500 lineas en un servicio  | 422         | SECURITY      |
+
+  @performance
+  Scenario Outline: Análisis de frontera exacta (N-1, N, N+1) en concurrencia de informes, mutaciones por minuto y líneas de receta
+    Given un centro activo tiene <export_concurrentes> exportaciones en curso, <mutaciones_min> mutaciones en el minuto actual y envía una receta de <lineas_receta> líneas
+    When el limitador de recursos evalúa la petición entrante
+    Then el servidor devuelve código HTTP <codigo_http> con estado "<estado_throttling>"
+
+    Examples:
+      | export_concurrentes | mutaciones_min | lineas_receta | codigo_http | estado_throttling                 |
+      | 1                   | 29             | 99            | 200         | DENTRO_DE_UMBRAL                  |
+      | 2                   | 30             | 100           | 200         | EN_LIMITE_EXACTO_PERMITIDO        |
+      | 3                   | 10             | 50            | 429         | CONCURRENCIA_EXPORTACION_EXCEDIDA |
+      | 1                   | 31             | 50            | 429         | TASA_MUTACIONES_CASCADA_EXCEDIDA  |
+      | 1                   | 10             | 101           | 422         | CARDINALIDAD_RECETA_EXCEDIDA      |
 ```
 
 ## 3. Revision History
@@ -69,3 +84,10 @@ Feature: Protección contra denegación de servicio asimétrica en recálculos y
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-05 | agent-threat-modeler | Especificación inicial de límites de tasa y concurrencia anti-DoS. |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

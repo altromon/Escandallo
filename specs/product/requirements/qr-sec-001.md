@@ -1,22 +1,23 @@
 ---
 id: QR-SEC-001
 type: requirement
-title: "Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verificación de Webhooks"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verificación de Webhooks
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: quality
 derives-from:
   - UC-SUBSCRIPTION-001
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@QR-SEC-001"
-  - "@automated"
-  - "@regression"
+  - '@QR-SEC-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Requirement: Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verificación de Webhooks
 
@@ -49,6 +50,19 @@ Feature: Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verific
       | inyeccion_payload_malformado | /api/centers/costs           | 400         |
       | manipulacion_idor_tenant     | /api/centers/other-id/report | 403         |
       | falsificacion_firma_stripe   | /api/webhooks/stripe         | 400         |
+
+  @security @mitigation
+  Scenario Outline: Análisis de frontera en ventana temporal de firma de webhook (300s) y límite de peticiones por minuto
+    Given una petición entrante llega con antigüedad de firma de <edad_seg> segundos y contador de peticiones en <num_peticiones> por minuto
+    When el filtro perimetral de seguridad evalúa los umbrales configurados (máximo 300s y 30 peticiones/min)
+    Then el servidor responde con código HTTP <codigo_http>
+
+    Examples:
+      | edad_seg | num_peticiones | codigo_http |
+      | 299      | 29             | 200         |
+      | 300      | 30             | 200         |
+      | 301      | 10             | 400         |
+      | 50       | 31             | 429         |
 ```
 
 ## 3. Revision History
@@ -56,3 +70,10 @@ Feature: Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verific
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-04 | agent-product-analyst | Definición inicial del requisito de calidad de ciberseguridad en servidor. |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

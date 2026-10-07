@@ -39,8 +39,8 @@ superseded-by: null
 | :---: | :--- | :--- | :--- |
 | **1** | **Aislamiento Multi-Tenant Zero-Trust y Seguridad Perimetral** | `QR-SEC-001`, `SEC-REQ-TENANT-001` | PostgreSQL Row-Level Security (`FORCE RLS`), validación dual de titularidad en copia de catálogos (`M4`) y escudo perimetral Cloudflare WAF (`SEC-ENC-EDGE-WAF-001`). |
 | **2** | **Accesibilidad Universal y Ergonomía Multi-Dispositivo** | `QR-UI-A11Y-001` | Interfaz web con conformidad WCAG 2.1 AA, objetivos táctiles $\ge 44\times 44\text{ px}$ y vistas adaptativas para móvil, tablet en cabina (vertical/horizontal) y escritorio. |
-| **3** | **Exactitud Financiera e Integridad del Histórico en Cascada** | `FR-CALC-001`, `FR-HIST-001` | Motor de cálculo puro en `decimal.js` + `NUMERIC(14,4)` y transacciones ACID síncronas (`< 15 ms`) que guardan snapshots inmutables solo cuando un coste está en uso activo. |
-| **4** | **Rentabilidad Operativa Extrema y Protección Anti-DoS** | `FR-BILLING-001`, `SEC-REQ-DOS-001` | Monolito modular en Node.js LTS + PostgreSQL desplegado en VPS europeo con TCO `< 10 EUR/mes` (rentable desde el primer suscriptor de **14,90 EUR/mes**) y estrangulamiento de operaciones asimétricas. |
+| **3** | **Exactitud Financiera e Integridad del Histórico en Cascada** | `FR-CALC-001`, `FR-HIST-001` | Motor de cálculo puro en C# con `System.Decimal` (128 bits) + `NUMERIC(14,4)` y transacciones ACID síncronas (`< 10 ms`) que guardan snapshots inmutables solo cuando un coste está en uso activo. |
+| **4** | **Rentabilidad Operativa Extrema y Protección Anti-DoS** | `FR-BILLING-001`, `SEC-REQ-DOS-001` | Monolito modular en `.NET 8/9 LTS` (`ASP.NET Core` + `Blazor`) + PostgreSQL desplegado en VPS europeo con TCO `< 10 EUR/mes` (rentable desde el primer suscriptor de **14,90 EUR/mes**) y estrangulamiento de operaciones asimétricas. |
 
 ---
 

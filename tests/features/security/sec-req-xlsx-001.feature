@@ -31,3 +31,16 @@ Feature: Protección contra XXE, bombas ZIP e inyección de fórmulas DDE en arc
       | @SUM(1+1)*cmd                        | 12.00          | escapar_prefijo_como_texto_literal      | SANITIZADO       |
       | Crema Hidratante Facial              | NaN            | rechazar_entrada_aritmetica_invalida    | HTTP_422         |
       | Vial Ácido Hialurónico               | -15.00         | rechazar_entrada_aritmetica_invalida    | HTTP_422         |
+
+  Scenario Outline: Análisis de frontera en tamaño comprimido (2MB), descomprimido (10MB), ratio ZIP (20:1) y filas (5000)
+    Given un archivo ".xlsx" tiene tamaño comprimido <tam_comprimido_kb> KB, tamaño descomprimido <tam_descomprimido_kb> KB, ratio <ratio_zip> y <num_filas> filas
+    When el validador OOXML pre-inspecciona las cabeceras del archivo antes de cargarlo en memoria
+    Then el resultado de la inspección es "<veredicto_zip>" con código HTTP <codigo_http>
+
+    Examples:
+      | tam_comprimido_kb | tam_descomprimido_kb | ratio_zip | num_filas | veredicto_zip                    | codigo_http |
+      | 2047              | 10239                | 19        | 4999      | ARCHIVO_OOXML_VALIDO             | 200         |
+      | 2048              | 10240                | 20        | 5000      | ARCHIVO_OOXML_VALIDO             | 200         |
+      | 2049              | 5000                 | 5         | 1000      | RECHAZADO_TAMANO_COMPRIMIDO      | 422         |
+      | 1000              | 10241                | 21        | 1000      | RECHAZADO_RATIO_O_DESCOMPRIMIDO  | 422         |
+      | 500               | 2000                 | 4         | 5001      | RECHAZADO_LIMITE_FILAS_EXCEDIDO  | 422         |

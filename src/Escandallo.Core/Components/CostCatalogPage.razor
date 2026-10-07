@@ -1,0 +1,27 @@
+@using Microsoft.AspNetCore.Components
+@namespace Escandallo.Core.Components
+
+<section aria-labelledby="catalog-heading" data-active-tab="@ActiveCategoryTab">
+    <h1 id="catalog-heading">Catálogo de Costes y Parámetros Configurables del Centro</h1>
+    <div role="tablist" aria-label="Categorías de Costes">
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Productos")" class="touch-target-44">Productos</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Personal")" class="touch-target-44">Personal</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "GastosGenerales")" class="touch-target-44">Gastos Generales</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Parametros")" class="touch-target-44">Parámetros (IVA, Beneficio, Capacidad, Equivalencias)</button>
+    </div>
+    <div role="region" aria-label="Asistente configurable de equivalencias de dosis de cabina (M5)">
+        <button type="button" class="touch-target-44" aria-label="1 pulsación (por defecto 2 ml, configurable)">1 Pulsación (@PulsacionMl ml)</button>
+        <button type="button" class="touch-target-44" aria-label="1 gota (por defecto 0.05 ml, configurable)">1 Gota (@GotaMl ml)</button>
+        <button type="button" class="touch-target-44" aria-label="1 cucharadita (por defecto 5 ml, configurable)">1 Cucharadita (@CucharaditaMl ml)</button>
+        <button type="button" class="touch-target-44" aria-label="1 ampolla o vial monodosis (por defecto 2 ml, configurable)">1 Ampolla/Vial Monodosis (@AmpollaVialMl ml)</button>
+        <button type="button" class="touch-target-44" aria-label="Cargar catálogo semilla en 1 clic (M4)">Cargar Plantilla Semilla</button>
+    </div>
+</section>
+
+@code {
+    [Parameter] public string ActiveCategoryTab { get; set; } = "Productos";
+    [Parameter] public decimal GotaMl { get; set; } = 0.05m;
+    [Parameter] public decimal PulsacionMl { get; set; } = 2.0m;
+    [Parameter] public decimal CucharaditaMl { get; set; } = 5.0m;
+    [Parameter] public decimal AmpollaVialMl { get; set; } = 2.0m;
+}

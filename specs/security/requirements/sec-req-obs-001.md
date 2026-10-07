@@ -1,28 +1,29 @@
 ---
 id: SEC-REQ-OBS-001
 type: security-requirement
-title: "RBAC Estricto para Mantenedor, Redactado Automático PII/Secretos en Logs DEBUG y Anti-Log-Injection"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: RBAC Estricto para Mantenedor, Redactado Automático PII/Secretos en Logs DEBUG y Anti-Log-Injection
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: security
 priority: critical
 derives-from:
   - UC-OBSERVABILITY-001
 mitigates-abuse-case:
   - ABUSE-PRIV-OBS-001
-enforced-in-enclave: "SEC-ENC-DATA-OBS-001"
-owasp-asvs: "V4.1, V7.1, V7.2"
-stride-category: "Elevation of Privilege"
+enforced-in-enclave: SEC-ENC-DATA-OBS-001
+owasp-asvs: V4.1, V7.1, V7.2
+stride-category: Elevation of Privilege
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@SEC-REQ-OBS-001"
-  - "@automated"
-  - "@regression"
+  - '@SEC-REQ-OBS-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Security Requirement: RBAC Estricto para Mantenedor, Redactado Automático PII/Secretos en Logs DEBUG y Anti-Log-Injection
 
@@ -60,6 +61,18 @@ Feature: Blindaje del rol mantenedor, ofuscación de secretos en modo DEBUG y pr
       | mass_assignment_registro_rol         | role=maintainer                          | ignorar_campo_y_denegar_privilegio        | 403         |
       | acceso_endpoint_exportacion_logs     | GET /admin/observability/export          | denegar_acceso_rbac_no_autorizado         | 403         |
       | inyeccion_crlf_en_campo_busqueda     | servicio\r\n{"level":"INFO","faked":1}   | escapar_saltos_de_linea_en_json_estruct   | 400         |
+
+  Scenario Outline: Verificación de frontera de ofuscación inmutable en todos los niveles de severidad y caducidad TTL de DEBUG
+    Given el nivel de severidad activo en el servidor es "<nivel_activo>" y han transcurrido <minutos_transcurridos> minutos
+    When se procesa un evento con el campo sensible "<campo_sensible>"
+    Then el valor serializado en el log es "<valor_serializado>" y el nivel efectivo pasa a ser "<nivel_efectivo>"
+
+    Examples:
+      | nivel_activo | minutos_transcurridos | campo_sensible   | valor_serializado | nivel_efectivo |
+      | DEBUG        | 59                    | authorization    | [REDACTED]        | DEBUG          |
+      | DEBUG        | 60                    | cookie           | [REDACTED]        | DEBUG          |
+      | DEBUG        | 61                    | stripe_signature | [REDACTED]        | INFO           |
+      | SECURITY     | 120                   | iban             | [REDACTED]        | SECURITY       |
 ```
 
 ## 3. Revision History
@@ -67,3 +80,10 @@ Feature: Blindaje del rol mantenedor, ofuscación de secretos en modo DEBUG y pr
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-05 | agent-threat-modeler | Especificación inicial de seguridad sobre RBAC de mantenedor y tubería de logs. |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

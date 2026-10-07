@@ -1,0 +1,23 @@
+@using Microsoft.AspNetCore.Components
+@namespace Escandallo.Core.Components
+
+<div class="escandallo-app-shell" role="application" aria-label="Plataforma SaaS de Escandallos para Centros de Estética" data-viewport="@ViewportMode">
+    <header class="escandallo-header" role="banner">
+        <nav aria-label="Navegación principal y selector de centro">
+            <button type="button" class="touch-target-44" aria-label="Seleccionar Centro Activo">@ActiveCenterName</button>
+            <a href="#tab-catalog" class="touch-target-44">Catálogo de Costes</a>
+            <a href="#tab-builder" class="touch-target-44">Constructor de Escandallos</a>
+            <a href="#tab-reports" class="touch-target-44">Informes Ejecutivos</a>
+            <a href="#tab-observability" class="touch-target-44">Consola Mantenedor</a>
+        </nav>
+    </header>
+    <main class="escandallo-main-viewport" role="main">
+        @Body
+    </main>
+</div>
+
+@code {
+    [Parameter] public string ActiveCenterName { get; set; } = "Estética Lumière Madrid";
+    [Parameter] public string ViewportMode { get; set; } = "SIN_OVERFLOW_HORIZONTAL:TARGET_44PX";
+    [Parameter] public RenderFragment? Body { get; set; }
+}

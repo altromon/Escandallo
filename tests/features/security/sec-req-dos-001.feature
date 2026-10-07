@@ -30,3 +30,17 @@ Feature: Protección contra denegación de servicio asimétrica en recálculos y
       | actualizacion_coste_con_cascada      | 30 mutaciones por minuto         | 45 mutaciones en 20s       | 429         | WARN          |
       | exportacion_informe_ejecutivo_xlsx   | 10 exportaciones por minuto      | 15 exportaciones en 30s    | 429         | SECURITY      |
       | guardado_receta_escandallo_m3        | 100 lineas maximas por servicio  | 500 lineas en un servicio  | 422         | SECURITY      |
+
+  @performance
+  Scenario Outline: Análisis de frontera exacta (N-1, N, N+1) en concurrencia de informes, mutaciones por minuto y líneas de receta
+    Given un centro activo tiene <export_concurrentes> exportaciones en curso, <mutaciones_min> mutaciones en el minuto actual y envía una receta de <lineas_receta> líneas
+    When el limitador de recursos evalúa la petición entrante
+    Then el servidor devuelve código HTTP <codigo_http> con estado "<estado_throttling>"
+
+    Examples:
+      | export_concurrentes | mutaciones_min | lineas_receta | codigo_http | estado_throttling                 |
+      | 1                   | 29             | 99            | 200         | DENTRO_DE_UMBRAL                  |
+      | 2                   | 30             | 100           | 200         | EN_LIMITE_EXACTO_PERMITIDO        |
+      | 3                   | 10             | 50            | 429         | CONCURRENCIA_EXPORTACION_EXCEDIDA |
+      | 1                   | 31             | 50            | 429         | TASA_MUTACIONES_CASCADA_EXCEDIDA  |
+      | 1                   | 10             | 101           | 422         | CARDINALIDAD_RECETA_EXCEDIDA      |

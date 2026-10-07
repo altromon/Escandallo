@@ -20,6 +20,7 @@ categories:
       - "0BSD"
       - "BlueOak-1.0.0"
       - "Python-2.0"
+      - "PostgreSQL"
 
   weak_copyleft_conditional:
     action: "REVIEW_REQUIRED"

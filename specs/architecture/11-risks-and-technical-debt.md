@@ -32,7 +32,7 @@ superseded-by: null
 | Debt Item | Affected Component | Trade-off Justification (Simplicity & ROI) | Payoff / Evolution Trigger |
 | :--- | :--- | :--- | :--- |
 | **Despliegue Mononodo (Single-Node Docker Compose)** | `CMP-ESCANDALLO-SYS-001` | Mantiene el TCO en `~5,50–9,50 EUR/mes` para alcanzar rentabilidad desde la primera suscripción (`ADR-001`). | Migrar PostgreSQL a instancia gestionada HA cuando la plataforma supere los **500 centros de pago** ($>7.400\text{ EUR/mes}$ MRR). |
-| **Generación Síncrona en Streaming de PDF/Excel** | `CMP-DOC-IO-001` | Evita desplegar Redis + colas de workers en segundo plano para informes que tardan $< 300\text{ ms}$ con `pdfkit`/`exceljs`. | Extraer a un pool de Worker Threads dedicados si el volumen de informes concurrentes supera las 50 peticiones/minuto. |
+| **Generación Síncrona en Streaming de PDF/Excel** | `CMP-DOC-IO-001` | Evita desplegar Redis + colas de workers externos para informes que tardan $< 250\text{ ms}$ con `PDFsharp`/`ClosedXML`. | Extraer a un `BackgroundService` con `System.Threading.Channels` si el volumen de informes concurrentes supera las 50 peticiones/minuto. |
 
 ---
 

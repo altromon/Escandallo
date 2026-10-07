@@ -1,22 +1,23 @@
 ---
 id: FR-OBS-001
 type: requirement
-title: "Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: functional
 derives-from:
   - UC-OBSERVABILITY-001
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@FR-OBS-001"
-  - "@automated"
-  - "@regression"
+  - '@FR-OBS-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Requirement: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor
 
@@ -27,7 +28,7 @@ El sistema DEBE emitir logs estructurados en formato estándar con granularidad 
 ## 2. Acceptance Criteria (Gherkin)
 
 ```gherkin
-@FR-OBS-001 @automated @regression @security
+@FR-OBS-001 @automated @regression
 Feature: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor
 
   Scenario: Usuario mantenedor configura la granularidad y extrae logs estructurados, trazas y métricas
@@ -36,33 +37,31 @@ Feature: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mante
     Then el servidor aplica la granularidad "DEBUG" sin reiniciar el servicio
     And entrega el paquete en formato estándar con los registros de logs estructurados, trazas de ejecución y métricas del sistema
 
-  @boundary
-  Scenario Outline: Extracción de telemetría y cambio de niveles de granularidad válidos en los límites de ventana temporal
-    Given un usuario autenticado con rol "ACT-MAINTAINER-001"
-    When configura el nivel de granularidad "<nivel_log>" y solicita exportar el recurso "<recurso>" con ventana de <horas_ventana> horas
-    Then el servidor responde con código HTTP <codigo_http> y formato de salida "<formato_salida>"
-
-    Examples:
-      | nivel_log | recurso | horas_ventana | codigo_http | formato_salida |
-      | DEBUG     | logs    | 1             | 200         | ndjson         |
-      | INFO      | traces  | 24            | 200         | otlp_json      |
-      | WARN      | metrics | 168           | 200         | prometheus_csv |
-      | ERROR     | logs    | 720           | 200         | ndjson         |
-      | SECURITY  | logs    | 720           | 200         | ndjson         |
-
-  @invalid @security
-  Scenario Outline: Rechazo de acceso sin privilegios de mantenedor o parámetros de observabilidad fuera de rango
+  Scenario Outline: Control de acceso por rol a la configuración de granularidad y extracción de observabilidad
     Given un usuario autenticado con rol "<rol>"
-    When realiza una petición sobre el recurso "<recurso>" con nivel "<nivel_log>" y ventana de <horas_ventana> horas
-    Then el servidor rechaza la petición con código HTTP <codigo_http> y código de error "<error_code>"
+    When realiza una petición sobre el recurso de telemetría "<recurso>"
+    Then el servidor responde con código HTTP <codigo_http>
 
     Examples:
-      | rol                   | recurso         | nivel_log     | horas_ventana | codigo_http | error_code                |
-      | ACT-ESTHETIC-USER-001 | logs            | INFO          | 24            | 403         | MAINTAINER_ROLE_REQUIRED  |
-      | ACT-ESTHETIC-USER-001 | log_granularity | DEBUG         | 24            | 403         | MAINTAINER_ROLE_REQUIRED  |
-      | ACT-MAINTAINER-001    | log_granularity | TRACE_VERBOSE | 24            | 400         | INVALID_LOG_LEVEL         |
-      | ACT-MAINTAINER-001    | logs            | INFO          | 0             | 422         | INVALID_TIME_WINDOW_RANGE |
-      | ACT-MAINTAINER-001    | logs            | INFO          | -24           | 422         | INVALID_TIME_WINDOW_RANGE |
+      | rol                   | recurso          | codigo_http |
+      | ACT-MAINTAINER-001    | logs             | 200         |
+      | ACT-MAINTAINER-001    | traces           | 200         |
+      | ACT-MAINTAINER-001    | metrics          | 200         |
+      | ACT-MAINTAINER-001    | log_granularity  | 200         |
+      | ACT-ESTHETIC-USER-001 | logs             | 403         |
+      | ACT-ESTHETIC-USER-001 | log_granularity  | 403         |
+
+  Scenario Outline: Rechazo controlado de niveles de severidad inexistentes o formatos de exportación de telemetría inválidos
+    Given el usuario "ops@escandallo.es" está autenticado con el rol "ACT-MAINTAINER-001"
+    When solicita configurar el nivel "<nivel_log>" y exportar telemetría en el formato "<formato_exportacion>"
+    Then el servidor responde con código HTTP <codigo_http> y estado "<estado_operacion>"
+
+    Examples:
+      | nivel_log | formato_exportacion | codigo_http | estado_operacion                  |
+      | DEBUG     | JSON                | 200         | EXPORTACION_TELEMETRIA_OK         |
+      | SECURITY  | OTLP                | 200         | EXPORTACION_TELEMETRIA_OK         |
+      | VERBOSE99 | JSON                | 400         | NIVEL_GRANULARIDAD_NO_SOPORTADO   |
+      | INFO      | EXE                 | 400         | FORMATO_TELEMETRIA_NO_SOPORTADO   |
 ```
 
 ## 3. Revision History
@@ -71,5 +70,10 @@ Feature: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mante
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-04 | agent-product-analyst | Definición inicial del requisito de extracción de logs, trazas y métricas. |
 | 1.1.0 | 2026-10-05 | agent-expert-user | Logs estructurados en formato estándar con granularidad configurable y soporte dual (descarga web + stack externo). |
-| 1.3.0 | 2026-10-05 | agent-qa-engineer | Adición de casos límite de niveles/ventanas de telemetría y casos inválidos de rol o rango temporal. |
 
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

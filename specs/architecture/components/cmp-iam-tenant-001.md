@@ -1,12 +1,12 @@
 ---
 id: CMP-IAM-TENANT-001
 type: component
-title: "Módulo de Identidad, RBAC, Guardia Multi-Tenant RLS y Limitador de Tasa"
+title: Módulo de Identidad, RBAC, Guardia Multi-Tenant RLS y Limitador de Tasa
 status: proposed
-version: "1.0.0"
-schema-version: "1.0"
+version: 1.0.0
+schema-version: '1.0'
 level: 2
-bounded-context: "Identity & Multi-Tenancy"
+bounded-context: Identity & Multi-Tenancy
 parent-component: CMP-ESCANDALLO-SYS-001
 implementation-type: service
 implements-use-cases:
@@ -18,14 +18,24 @@ satisfies-requirements:
   - SEC-REQ-TENANT-001
   - SEC-REQ-DOS-001
   - SEC-REQ-OBS-001
+  - FR-COST-001
+  - FR-CALC-001
+  - FR-HIST-001
+  - FR-REPORT-001
+  - FR-BILLING-001
+  - FR-OBS-001
+  - QR-UI-A11Y-001
+  - SEC-REQ-BILLING-001
+  - SEC-REQ-XLSX-001
 hosted-in-enclave: SEC-ENC-APP-CORE-001
 interfaces:
-  - name: "Authentication, Tenant Context & Rate-Limiting Middleware"
-    protocol: "In-Process API / REST HTTP"
-    contract-spec: "specs/security/requirements/sec-req-tenant-001.md"
+  - name: Authentication, Tenant Context & Rate-Limiting Middleware
+    protocol: In-Process API / REST HTTP
+    contract-spec: specs/security/requirements/sec-req-tenant-001.md
 supersedes: null
 superseded-by: null
 ---
+
 
 # CMP-IAM-TENANT-001: Módulo de Identidad, RBAC, Guardia Multi-Tenant RLS y Limitador de Tasa
 
@@ -50,7 +60,7 @@ graph TD
 
 ## 3. Interface Contracts and Execution Policies
 
-- **Execution Mechanism**: Hooks de ciclo de vida de petición en Fastify (`onRequest`, `preHandler`) y wrapper transaccional obligatorio `withTenantTransaction(userId, centerId, fn)`.
+- **Execution Mechanism**: Middlewares y `IEndpointFilter` de `ASP.NET Core` (`UseRateLimiter`, `UseAuthentication`, `UseAuthorization`) y wrapper transaccional obligatorio `ExecuteInTenantTransactionAsync(userId, centerId, action)` sobre `NpgsqlConnection`.
 - **Fault Tolerance and Performance**: Sobrecarga de validación $< 1.5\text{ ms}$ por petición; ante cualquier discrepancia de pertenencia entre `user_id` y `center_id`, aborta inmediatamente con `403 Forbidden` o `404 Not Found` y emite evento `SECURITY`.
 
 ---
@@ -60,3 +70,10 @@ graph TD
 | Version | Date | Author / Agent | Change Description | Change Reference (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
 | **1.0.0** | 2026-10-05 | agent-system-architect | Definición inicial del módulo IAM, RLS y Rate Limiting | ARCH-INIT-001 |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Integración de incremento de entrega chg-001-escandallo-mvp | chg-001-escandallo-mvp |

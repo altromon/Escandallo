@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@aisdlc/cli": "^1.1.1"
+    "@aisdlc/cli": "^1.3.0"
   }
 }

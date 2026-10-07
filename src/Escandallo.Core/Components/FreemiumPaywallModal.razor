@@ -1,0 +1,16 @@
+@using Microsoft.AspNetCore.Components
+@namespace Escandallo.Core.Components
+
+<div role="dialog" aria-modal="true" aria-labelledby="paywall-modal-title" class="escandallo-modal" data-subscription="@SubscriptionState">
+    <h2 id="paywall-modal-title">Límite de Cuota Gratuita (@ActiveEscandallosCount Escandallos Activos en el Centro)</h2>
+    <p>Archiva un escandallo activo sin perder su histórico o activa la suscripción ilimitada en Stripe (14,90 EUR/mes o 149,00 EUR/año).</p>
+    <div class="modal-actions">
+        <button type="button" class="touch-target-44">Archivar Escandallo Activo (M1)</button>
+        <button type="button" class="touch-target-44">Suscribirse con Stripe</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int ActiveEscandallosCount { get; set; } = 2;
+    [Parameter] public string SubscriptionState { get; set; } = "free";
+}

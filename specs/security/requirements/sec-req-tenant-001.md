@@ -1,10 +1,10 @@
 ---
 id: SEC-REQ-TENANT-001
 type: security-requirement
-title: "Autorización Multi-Tenant Zero-Trust, Prevención IDOR/BOLA y Row-Level Security"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: Autorización Multi-Tenant Zero-Trust, Prevención IDOR/BOLA y Row-Level Security
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: security
 priority: critical
 derives-from:
@@ -12,18 +12,19 @@ derives-from:
   - UC-EXEC-REPORT-001
 mitigates-abuse-case:
   - ABUSE-IDOR-TENANT-001
-enforced-in-enclave: "SEC-ENC-APP-CORE-001"
-owasp-asvs: "V4.1, V4.2"
-stride-category: "Information Disclosure"
+enforced-in-enclave: SEC-ENC-APP-CORE-001
+owasp-asvs: V4.1, V4.2
+stride-category: Information Disclosure
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@SEC-REQ-TENANT-001"
-  - "@automated"
-  - "@regression"
+  - '@SEC-REQ-TENANT-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Security Requirement: Autorización Multi-Tenant Zero-Trust, Prevención IDOR/BOLA y Row-Level Security
 
@@ -64,6 +65,18 @@ Feature: Prevención de ataques IDOR/BOLA cross-tenant en catálogos e informes
       | PATCH /costs/cost-uuid-ajeno     | cost_id=cost-uuid-ajeno  | 404         | SECURITY  |
       | POST /reports/export-pdf         | center_id=C_AJENO        | 403         | SECURITY  |
       | POST /reports/export-xlsx        | center_id=C_AJENO        | 403         | SECURITY  |
+
+  Scenario Outline: Análisis de frontera en validación dual de titularidad al copiar catálogos entre centros (M4)
+    Given el usuario autenticado tiene relación "<titularidad_origen>" sobre el centro origen y "<titularidad_destino>" sobre el centro destino
+    When ejecuta la solicitud transaccional de clonado de catálogo M4
+    Then el guardia multi-tenant responde con código HTTP <codigo_http> y estado "<estado_copia>"
+
+    Examples:
+      | titularidad_origen | titularidad_destino | codigo_http | estado_copia               |
+      | OWNER              | OWNER               | 200         | CATALOGO_CLONADO_OK        |
+      | OWNER              | NONE                | 403         | RECHAZADO_DESTINO_AJENO    |
+      | NONE               | OWNER               | 403         | RECHAZADO_ORIGEN_AJENO     |
+      | NONE               | NONE                | 403         | RECHAZADO_AMBOS_AJENOS     |
 ```
 
 ## 3. Revision History
@@ -71,3 +84,10 @@ Feature: Prevención de ataques IDOR/BOLA cross-tenant en catálogos e informes
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-05 | agent-threat-modeler | Especificación inicial del requisito de seguridad anti-IDOR multi-tenant. |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

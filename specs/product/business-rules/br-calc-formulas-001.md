@@ -27,7 +27,7 @@ Todos los cálculos del sistema deben reproducir con exactitud determinista las 
 
 2. **Coste Unitario de Producto, Unidades de Cabina y Merma (`Tabla3 - Productos`, Mejora M5)**:
    - Datos introducidos por el usuario: `Nombre`, `Cantidad` (capacidad del envase $> 0$), `Ud medida` (`ml`, `g`, `ud` u otra unidad configurada), `Precio` (€ de compra del envase) y `% Merma` opcional configurable (por defecto `0%`).
-   - El sistema incluye un asistente de equivalencia rápida de dosificación en cabina (*1 gota ≈ 0,05 ml, 1 pulsación/pump ≈ 2 ml, 1 cucharadita ≈ 5 ml*) que convierte la dosis a la unidad del envase.
+   - El sistema incluye un asistente de equivalencia rápida de dosificación en cabina cuyos factores son **100% configurables desde la aplicación por cada centro** (valores iniciales por defecto: *1 gota = 0,05 ml, 1 pulsación/pump = 2 ml, 1 cucharadita = 5 ml, 1 ampolla/vial monodosis = 2 ml*) que convierte la dosis a la unidad del envase.
    - Fórmula:
      $$\text{Precio Unitario Producto} = \frac{\text{Precio}}{\text{Cantidad}}$$
    - Restricción: `Cantidad` debe ser estrictamente mayor que cero para evitar división por cero (`#DIV/0!`).

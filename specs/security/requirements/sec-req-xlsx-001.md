@@ -1,10 +1,10 @@
 ---
 id: SEC-REQ-XLSX-001
 type: security-requirement
-title: "Parseo Seguro de Plantillas Excel Anti-XXE/ZipBomb y Neutralización de Fórmulas DDE"
-status: draft
-version: "1.0.0"
-schema-version: "1.0"
+title: Parseo Seguro de Plantillas Excel Anti-XXE/ZipBomb y Neutralización de Fórmulas DDE
+status: active
+version: 1.0.0
+schema-version: '1.0'
 category: security
 priority: high
 derives-from:
@@ -12,18 +12,19 @@ derives-from:
   - UC-EXEC-REPORT-001
 mitigates-abuse-case:
   - ABUSE-XLSX-INJECT-001
-enforced-in-enclave: "SEC-ENC-APP-CORE-001"
-owasp-asvs: "V5.2, V5.3, V12.1"
-stride-category: "Tampering"
+enforced-in-enclave: SEC-ENC-APP-CORE-001
+owasp-asvs: V5.2, V5.3, V12.1
+stride-category: Tampering
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - "@SEC-REQ-XLSX-001"
-  - "@automated"
-  - "@regression"
+  - '@SEC-REQ-XLSX-001'
+  - '@automated'
+  - '@regression'
 supersedes: null
 superseded-by: null
 ---
+
 
 # Security Requirement: Parseo Seguro de Plantillas Excel Anti-XXE/ZipBomb y Neutralización de Fórmulas DDE
 
@@ -62,6 +63,19 @@ Feature: Protección contra XXE, bombas ZIP e inyección de fórmulas DDE en arc
       | @SUM(1+1)*cmd                        | 12.00          | escapar_prefijo_como_texto_literal      | SANITIZADO       |
       | Crema Hidratante Facial              | NaN            | rechazar_entrada_aritmetica_invalida    | HTTP_422         |
       | Vial Ácido Hialurónico               | -15.00         | rechazar_entrada_aritmetica_invalida    | HTTP_422         |
+
+  Scenario Outline: Análisis de frontera en tamaño comprimido (2MB), descomprimido (10MB), ratio ZIP (20:1) y filas (5000)
+    Given un archivo ".xlsx" tiene tamaño comprimido <tam_comprimido_kb> KB, tamaño descomprimido <tam_descomprimido_kb> KB, ratio <ratio_zip> y <num_filas> filas
+    When el validador OOXML pre-inspecciona las cabeceras del archivo antes de cargarlo en memoria
+    Then el resultado de la inspección es "<veredicto_zip>" con código HTTP <codigo_http>
+
+    Examples:
+      | tam_comprimido_kb | tam_descomprimido_kb | ratio_zip | num_filas | veredicto_zip                    | codigo_http |
+      | 2047              | 10239                | 19        | 4999      | ARCHIVO_OOXML_VALIDO             | 200         |
+      | 2048              | 10240                | 20        | 5000      | ARCHIVO_OOXML_VALIDO             | 200         |
+      | 2049              | 5000                 | 5         | 1000      | RECHAZADO_TAMANO_COMPRIMIDO      | 422         |
+      | 1000              | 10241                | 21        | 1000      | RECHAZADO_RATIO_O_DESCOMPRIMIDO  | 422         |
+      | 500               | 2000                 | 4         | 5001      | RECHAZADO_LIMITE_FILAS_EXCEDIDO  | 422         |
 ```
 
 ## 3. Revision History
@@ -69,3 +83,10 @@ Feature: Protección contra XXE, bombas ZIP e inyección de fórmulas DDE en arc
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-05 | agent-threat-modeler | Especificación inicial de seguridad para parseo y generación de archivos Excel. |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

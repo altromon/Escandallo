@@ -1,12 +1,12 @@
 ---
 id: CMP-ESCANDALLO-SYS-001
 type: component
-title: "Plataforma SaaS Multi-Tenant de Escandallos y Rentabilidad para Centros de Estética (Sistema Raíz)"
+title: Plataforma SaaS Multi-Tenant de Escandallos y Rentabilidad para Centros de Estética (Sistema Raíz)
 status: proposed
-version: "1.0.0"
-schema-version: "1.0"
+version: 1.0.0
+schema-version: '1.0'
 level: 1
-bounded-context: "Escandallo SaaS Platform"
+bounded-context: Escandallo SaaS Platform
 parent-component: null
 implementation-type: composite
 implements-use-cases:
@@ -32,15 +32,16 @@ satisfies-requirements:
   - SEC-REQ-OBS-001
 hosted-in-enclave: SEC-ENC-APP-CORE-001
 interfaces:
-  - name: "Public Web & REST API Gateway"
-    protocol: "HTTPS / REST / JSON"
-    contract-spec: "specs/architecture/08-cross-cutting-concepts.md"
-  - name: "Stripe Webhook Ingestion Endpoint"
-    protocol: "HTTPS / HMAC-SHA256"
-    contract-spec: "specs/architecture/08-cross-cutting-concepts.md"
+  - name: Public Web & REST API Gateway
+    protocol: HTTPS / REST / JSON
+    contract-spec: specs/architecture/08-cross-cutting-concepts.md
+  - name: Stripe Webhook Ingestion Endpoint
+    protocol: HTTPS / HMAC-SHA256
+    contract-spec: specs/architecture/08-cross-cutting-concepts.md
 supersedes: null
 superseded-by: null
 ---
+
 
 # CMP-ESCANDALLO-SYS-001: Plataforma SaaS Multi-Tenant de Escandallos y Rentabilidad para Centros de Estética (Sistema Raíz)
 
@@ -56,17 +57,17 @@ graph TD
     Maintainer["ACT-MAINTAINER-001 (Operador)"] -->|HTTPS TLS 1.3| WAF
     Stripe["ACT-STRIPE-001 (Stripe Webhooks)"] -->|HTTPS + Stripe-Signature| WAF
 
-    subgraph SYS["CMP-ESCANDALLO-SYS-001 (Monolito Modular TypeScript)"]
-        UI["CMP-WEB-UI-001 (Cliente Web WCAG 2.1 AA)"]
+    subgraph SYS["CMP-ESCANDALLO-SYS-001 (Monolito Modular .NET 8/9 LTS)"]
+        UI["CMP-WEB-UI-001 (Cliente Web Blazor WCAG 2.1 AA)"]
         IAM["CMP-IAM-TENANT-001 (Auth, RBAC, RLS & Rate Limit)"]
         ENGINE["CMP-COST-ENGINE-001 (Motor Costes, Escandallos & Cascada)"]
         DOC["CMP-DOC-IO-001 (Importador .xlsx & Informes PDF/Excel)"]
-        BILL["CMP-BILLING-STRIPE-001 (Cuota Freemium & Stripe)"]
-        OBS["CMP-OBS-TELEMETRY-001 (Logs Pino, OTLP & Redactado)"]
+        BILL["CMP-BILLING-STRIPE-001 (Cuota Freemium & Stripe.net)"]
+        OBS["CMP-OBS-TELEMETRY-001 (Logs Serilog, OTLP & Redactado)"]
     end
 
     WAF --> UI
-    UI -->|REST JSON| IAM
+    UI -->|REST JSON / Blazor SSR| IAM
     IAM --> ENGINE
     IAM --> DOC
     IAM --> BILL
@@ -78,7 +79,7 @@ graph TD
 
 ## 3. Interface Contracts and Execution Policies
 
-- **Execution Mechanism**: Proceso contenedorizado Node.js 22 LTS gestionado por Docker Compose detrás de Caddy Reverse Proxy y Cloudflare Edge WAF.
+- **Execution Mechanism**: Proceso contenedorizado `.NET 8/9 LTS` (`ASP.NET Core Kestrel`) gestionado por Docker Compose detrás de Caddy Reverse Proxy y Cloudflare Edge WAF.
 - **Fault Tolerance and Performance**: Huella de memoria máxima acotada a `512 MB RAM` por contenedor de aplicación; latencia $p95 < 100\text{ ms}$ en operaciones de cálculo y recálculo en cascada.
 
 ---
@@ -88,3 +89,10 @@ graph TD
 | Version | Date | Author / Agent | Change Description | Change Reference (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
 | **1.0.0** | 2026-10-05 | agent-system-architect | Definición inicial del componente raíz del sistema | ARCH-INIT-001 |
+
+
+## Historial de Revisiones
+
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
+| :--- | :--- | :--- | :--- | :--- |
+| **1.0.0** | 2026-10-07 | agent-devops | Integración de incremento de entrega chg-001-escandallo-mvp | chg-001-escandallo-mvp |

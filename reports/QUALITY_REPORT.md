@@ -1,8 +1,8 @@
 # 📊 Formal Quality and Release Gate Report (AI-SDLC)
 
-> **Generation Date:** 2026-10-05T20:49:40.015Z
+> **Generation Date:** 2026-10-05T22:32:46.379Z
 > **Release Gate Verdict:** 🟢 APPROVED (RELEASE READY)
-> **Global Rating:** **`B`** (MI Index: 72.9/100, Average CC: 2.3)
+> **Global Rating:** **`B`** (MI Index: 68.6/100, Average CC: 2.2)
 
 ---
 
@@ -10,12 +10,12 @@
 
 | Key Metric | Measured Value | Policy Threshold | Compliance |
 | :--- | :---: | :---: | :---: |
-| **Analyzed Files** | `16` | N/A | ℹ️ |
-| **Evaluated Functions** | `58` | N/A | ℹ️ |
-| **Lines of Code (LOC)** | `695` | N/A | ℹ️ |
-| **Cyclomatic Complexity (Average)** | `2.3` | $\le 10$ | ✅ COMPLIANT |
-| **Cognitive Complexity (Average)** | `1.7` | $\le 15$ | ✅ COMPLIANT |
-| **Maintainability Index (SEI MI)** | `72.9 / 100` | $\ge 50$ | ✅ COMPLIANT |
+| **Analyzed Files** | `25` | N/A | ℹ️ |
+| **Evaluated Functions** | `116` | N/A | ℹ️ |
+| **Lines of Code (LOC)** | `1353` | N/A | ℹ️ |
+| **Cyclomatic Complexity (Average)** | `2.2` | $\le 10$ | ✅ COMPLIANT |
+| **Cognitive Complexity (Average)** | `2.1` | $\le 15$ | ✅ COMPLIANT |
+| **Maintainability Index (SEI MI)** | `68.6 / 100` | $\ge 50$ | ✅ COMPLIANT |
 | **Functions in Violation** | `0` | $0$ (Mode STRICT) | ✅ 0 VIOLATIONS |
 
 ---
@@ -24,7 +24,7 @@
 
 | Language | Functions | Total LOC | Average MI | Average CC | Rating |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **C#** | `58` | `695` | `72.9` | `2.3` | `B` |
+| **C#** | `116` | `1353` | `68.6` | `2.2` | `B` |
 
 ---
 

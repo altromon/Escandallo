@@ -1,0 +1,37 @@
+services:
+  escandallo-db:
+    image: postgres:16-alpine
+    container_name: escandallo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: escandallo
+      POSTGRES_USER: escandallo_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-escandallo_local_dev_pwd}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U escandallo_app -d escandallo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  escandallo-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: escandallo-web
+    restart: unless-stopped
+    depends_on:
+      escandallo-db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=escandallo-db;Port=5432;Database=escandallo;Username=escandallo_app;Password=${POSTGRES_PASSWORD:-escandallo_local_dev_pwd}"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

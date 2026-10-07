@@ -40,7 +40,7 @@ graph LR
 
 | Exchange ID | Source / Target | Payload / Message | Protocol / Channel | Format |
 | :--- | :--- | :--- | :--- | :--- |
-| `OIE-USER-WEB-001` | `ACT-ESTHETIC-USER-001` $\leftrightarrow$ `CMP-ESCANDALLO-SYS-001` | Gestión de centros, catálogo de costes, recetas dinámicas `M3`, simulación de PVP `M2` e histórico | HTTPS (TLS 1.3) / REST | JSON (Validado con Zod) |
+| `OIE-USER-WEB-001` | `ACT-ESTHETIC-USER-001` $\leftrightarrow$ `CMP-ESCANDALLO-SYS-001` | Gestión de centros, catálogo de costes, recetas dinámicas `M3`, simulación de PVP `M2` e histórico | HTTPS (TLS 1.3) / REST & Blazor SSR | JSON / HTML5 (Validado en .NET) |
 | `OIE-REPORT-DOC-002` | `ACT-ESTHETIC-USER-001` $\leftrightarrow$ `CMP-DOC-IO-001` | Subida de plantilla de catálogo (`.xlsx`) y descarga de informes ejecutivos (`.pdf`, `.xlsx`) | HTTPS Streaming | OOXML (`.xlsx`) / PDF 1.7 (`.pdf`) |
 | `OIE-STRIPE-BILL-003` | `CMP-BILLING-STRIPE-001` $\leftrightarrow$ `ACT-STRIPE-001` | Creación de sesiones Checkout/Portal y recepción asíncrona de eventos de pago | HTTPS / Webhook HMAC-SHA256 | JSON (`Stripe-Signature`) |
 | `OIE-MAINT-OBS-004` | `ACT-MAINTAINER-001` $\leftrightarrow$ `CMP-OBS-TELEMETRY-001` | Cambio en caliente de nivel de log y exportación de telemetría redactada | HTTPS / OTLP | JSON / CSV / OTLP |
@@ -56,7 +56,7 @@ graph TD
     Client["Navegador Web (PC / Tablet / Móvil)"] -->|"TLS 1.3 (Puerto 443)"| CF["SEC-ENC-EDGE-WAF-001: Cloudflare Anycast WAF & CDN"]
     StripeHook["Stripe Webhook Dispatcher"] -->|"TLS 1.3 + Cabecera Stripe-Signature"| CF
     CF -->|"mTLS Authenticated Origin Pulls (IPs Filtradas)"| Caddy["Caddy Reverse Proxy (Contenedor DMZ)"]
-    Caddy -->|"HTTP Interno"| App["SEC-ENC-APP-CORE-001: Monolito Modular Node.js 22 LTS"]
+    Caddy -->|"HTTP Interno"| App["SEC-ENC-APP-CORE-001: Monolito Modular .NET 8/9 LTS (ASP.NET Core + Blazor)"]
     App -->|"Socket / Red Interna Aislada + RLS"| PG[("SEC-ENC-DATA-OBS-001: PostgreSQL 16 NVMe")]
     PG -.->|"Backup Diario Cifrado (restic + AES-256)"| R2[("Cloudflare R2 Object Storage UE")]
 ```

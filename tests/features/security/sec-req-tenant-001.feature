@@ -33,3 +33,15 @@ Feature: Prevención de ataques IDOR/BOLA cross-tenant en catálogos e informes
       | PATCH /costs/cost-uuid-ajeno     | cost_id=cost-uuid-ajeno  | 404         | SECURITY  |
       | POST /reports/export-pdf         | center_id=C_AJENO        | 403         | SECURITY  |
       | POST /reports/export-xlsx        | center_id=C_AJENO        | 403         | SECURITY  |
+
+  Scenario Outline: Análisis de frontera en validación dual de titularidad al copiar catálogos entre centros (M4)
+    Given el usuario autenticado tiene relación "<titularidad_origen>" sobre el centro origen y "<titularidad_destino>" sobre el centro destino
+    When ejecuta la solicitud transaccional de clonado de catálogo M4
+    Then el guardia multi-tenant responde con código HTTP <codigo_http> y estado "<estado_copia>"
+
+    Examples:
+      | titularidad_origen | titularidad_destino | codigo_http | estado_copia               |
+      | OWNER              | OWNER               | 200         | CATALOGO_CLONADO_OK        |
+      | OWNER              | NONE                | 403         | RECHAZADO_DESTINO_AJENO    |
+      | NONE               | OWNER               | 403         | RECHAZADO_ORIGEN_AJENO     |
+      | NONE               | NONE                | 403         | RECHAZADO_AMBOS_AJENOS     |

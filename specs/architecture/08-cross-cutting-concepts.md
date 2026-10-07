@@ -83,15 +83,15 @@ erDiagram
 | Policy ID | Scope | Satisfied Requirements | Control Description |
 | :--- | :--- | :--- | :--- |
 | `SEC-POL-RLS-001` | PostgreSQL 16 & API Middleware | `FR-TENANT-001`, `SEC-REQ-TENANT-001`, `SEC-REQ-BILLING-001` | `ALTER TABLE ... FORCE ROW LEVEL SECURITY` con predicado `center_id = current_setting('app.current_center_id')::uuid` y bloqueo pesimista `SELECT ... FOR UPDATE` en `centers` al activar escandallos. |
-| `SEC-POL-REDACT-002` | Tubería de Observabilidad | `FR-OBS-001`, `SEC-REQ-OBS-001` | Serializador `pino` con ofuscación inmutable `[REDACTED]` sobre credenciales, cookies y firmas incluso en nivel `DEBUG`, y saneamiento de saltos de línea `\r\n`. |
-| `SEC-POL-XLSX-SAFE-003` | Importador y Exportador Documental | `FR-REPORT-001`, `SEC-REQ-XLSX-001`, `SEC-REQ-DOS-001` | Límite `2 MB` comprimido / `10 MB` descomprimido (`ratio <= 20:1`), bloqueo de DTD/XXE, escape de prefijos `=+-@` y semáforo de máx. 2 exportaciones simultáneas por centro. |
+| `SEC-POL-REDACT-002` | Tubería de Observabilidad | `FR-OBS-001`, `SEC-REQ-OBS-001` | Destructuración en `Serilog` con ofuscación inmutable `[REDACTED]` sobre credenciales, cookies y firmas incluso en nivel `DEBUG`, y saneamiento de saltos de línea `\r\n`. |
+| `SEC-POL-XLSX-SAFE-003` | Importador y Exportador Documental | `FR-REPORT-001`, `SEC-REQ-XLSX-001`, `SEC-REQ-DOS-001` | Límite `2 MB` comprimido / `10 MB` descomprimido (`ratio <= 20:1`), bloqueo de DTD/XXE (`DtdProcessing.Prohibit`), escape de prefijos `=+-@` y `SemaphoreSlim` de máx. 2 exportaciones simultáneas por centro. |
 
 ---
 
 ## 3. Observability, Metrics, and Hot-Reloadable Severity (`DATA-TELEMETRY-JSON-002`)
 
-- **Trazabilidad Distribuida**: Propagación de cabecera `traceparent` (W3C Trace Context) mediante `@opentelemetry/sdk-node`.
-- **Niveles Soportados en Caliente**: `DEBUG`, `INFO`, `WARN`, `ERROR`, `SECURITY` actualizables vía `PUT /api/v1/admin/observability/log-level` sin reiniciar el proceso.
+- **Trazabilidad Distribuida**: Propagación de cabecera `traceparent` (W3C Trace Context) mediante `System.Diagnostics.Activity` y `OpenTelemetry .NET`.
+- **Niveles Soportados en Caliente**: `DEBUG`, `INFO`, `WARN`, `ERROR`, `SECURITY` actualizables vía `PUT /api/v1/admin/observability/log-level` sobre `LoggingLevelSwitch` sin reiniciar el proceso ASP.NET Core.
 - **Formatos de Extracción Dual**: Descarga bajo demanda en `JSON`, `CSV` y `OTLP` desde la consola web del mantenedor y exportación en streaming OTLP/HTTP hacia colectores externos.
 
 ---

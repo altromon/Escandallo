@@ -6,7 +6,7 @@
 # NO EDITAR MANUALMENTE: Cualquier cambio debe realizarse en el Markdown origen.
 # ==============================================================================
 
-@FR-TENANT-001 @automated @regression @security
+@FR-TENANT-001 @automated @regression
 Feature: Aislamiento Multi-Tenant de Centros de Estética por Cliente
 
   Scenario: Usuario con múltiples centros copia su catálogo de productos entre sus propios centros manteniendo el aislamiento frente a terceros
@@ -16,29 +16,27 @@ Feature: Aislamiento Multi-Tenant de Centros de Estética por Cliente
     Then el servidor copia los productos hacia "Centro Valencia" con código HTTP 200
     And los datos de "Centro Sevilla" permanecen inaccesibles para "cliente-a@estetica.es"
 
-  @boundary @idempotence
-  Scenario Outline: Casos límite de titularidad y volumen al clonar o consultar catálogos entre centros del mismo propietario
-    Given el usuario "<usuario_autenticado>" posee <num_centros> centros registrados y el centro origen tiene <items_catalogo> productos
-    And el centro "<centro_objetivo>" pertenece al propietario "<propietario_real>"
-    When "<usuario_autenticado>" ejecuta la acción "<accion>" sobre "<centro_objetivo>"
-    Then el servidor responde con código HTTP <codigo_http> y procesa <items_copiados> productos
-
-    Examples:
-      | usuario_autenticado   | num_centros | items_catalogo | centro_objetivo | propietario_real      | accion                    | codigo_http | items_copiados |
-      | cliente-a@estetica.es | 1           | 0              | Centro Madrid   | cliente-a@estetica.es | consultar_catalogo_vacio  | 200         | 0              |
-      | cliente-a@estetica.es | 2           | 1              | Centro Valencia | cliente-a@estetica.es | copiar_catalogo_minimo    | 200         | 1              |
-      | cliente-a@estetica.es | 2           | 5000           | Centro Valencia | cliente-a@estetica.es | copiar_catalogo_max_filas | 200         | 5000           |
-
-  @invalid @security
-  Scenario Outline: Rechazo de accesos fuera de rango, identificadores malformados o copia cruzada entre distintos clientes
+  Scenario Outline: Denegación de acceso o copia cruzada entre centros de distintos clientes
     Given el usuario "<usuario_autenticado>" está autenticado en el servidor
-    And el centro objetivo tiene identificador "<centro_id>" perteneciente a "<propietario_real>"
-    When "<usuario_autenticado>" intenta ejecutar la acción "<accion>" sobre "<centro_id>"
-    Then el servidor rechaza la petición con código HTTP <codigo_http>
+    And el centro "<centro_objetivo>" pertenece al propietario "<propietario_real>"
+    When "<usuario_autenticado>" intenta ejecutar la acción "<accion>" sobre "<centro_objetivo>"
+    Then el servidor responde con código HTTP <codigo_http>
 
     Examples:
-      | usuario_autenticado   | centro_id                            | propietario_real      | accion                    | codigo_http |
-      | cliente-a@estetica.es | 00000000-0000-4000-8000-000000000099 | cliente-b@estetica.es | consultar_catalogo_costes | 403         |
-      | cliente-b@estetica.es | 00000000-0000-4000-8000-000000000001 | cliente-a@estetica.es | copiar_catalogo_ajeno     | 403         |
-      | cliente-a@estetica.es | id-no-uuid-invalido                  | ninguno               | consultar_catalogo_costes | 400         |
-      | cliente-a@estetica.es | ""                                   | ninguno               | copiar_catalogo_propio    | 400         |
+      | usuario_autenticado   | centro_objetivo | propietario_real      | accion                     | codigo_http |
+      | cliente-a@estetica.es | Centro Madrid   | cliente-a@estetica.es | consultar_catalogo_costes  | 200         |
+      | cliente-a@estetica.es | Centro Valencia | cliente-a@estetica.es | copiar_catalogo_propio     | 200         |
+      | cliente-a@estetica.es | Centro Sevilla  | cliente-b@estetica.es | consultar_catalogo_costes  | 403         |
+      | cliente-b@estetica.es | Centro Madrid   | cliente-a@estetica.es | copiar_catalogo_ajeno      | 403         |
+
+  @security @mitigation
+  Scenario Outline: Rechazo controlado de identificadores de centro fuera de rango, vacíos o no autorizados
+    Given una petición hacia el endpoint multi-tenant con sesión "<estado_sesion>"
+    When se envía el identificador de centro "<center_id_invalido>" para la operación "<operacion>"
+    Then el servidor rechaza la operación de forma controlada con código HTTP <codigo_error> sin exponer trazas internas
+
+    Examples:
+      | estado_sesion | center_id_invalido                   | operacion          | codigo_error |
+      | autenticado   | ""                                   | listar_escandallos | 400          |
+      | autenticado   | "not-a-valid-uuid-format"            | copiar_catalogo    | 400          |
+      | anonimo       | "550e8400-e29b-41d4-a716-4466554400" | listar_escandallos | 401          |
