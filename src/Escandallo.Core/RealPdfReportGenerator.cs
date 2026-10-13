@@ -78,19 +78,21 @@ public static class RealPdfReportGenerator
     }
 
     private static int RenderSingleServiceCard(StringBuilder sb, TenantCatalogDto tenant, EscandalloServiceRecord svc, EscandalloCalculationResult calc, (decimal PriceExVat, decimal NetProfit, string Semaphore) sem, int y) {
-        int cardH = 58 + (svc.Recipe.Count * 13);
+        int cardH = 70 + (svc.Recipe.Count * 13);
         DrawFilledBox(sb, 36, y - cardH, 523, cardH, "0.98 0.99 1.0", "0.80 0.85 0.92");
         string stripeColor = sem.Semaphore == "OPTIMO" ? "0.09 0.64 0.29" : (sem.Semaphore == "ALERTA" ? "0.79 0.54 0.02" : "0.86 0.15 0.15");
         DrawFillRect(sb, 36, y - cardH, 5, cardH, stripeColor);
         DrawFillRect(sb, 41, y - 18, 518, 18, "0.94 0.96 0.99");
         DrawText(sb, "F2", 8.5, "0.06 0.09 0.16", 48, y - 12, string.Format(CultureInfo.InvariantCulture, "FICHA EJECUTIVA: {0} ({1} min - Personal: {2}) - Dictamen: {3}", Sanitize(svc.Name), svc.DuracionMinutos, Sanitize(svc.StaffRole), ResolveExecutiveSemaphoreText(sem.Semaphore)));
         var costText = string.Format(CultureInfo.InvariantCulture, "Costes -> Productos con merma: {0:0.00} EUR | Personal imputado: {1:0.00} EUR | Gastos Generales: {2:0.00} EUR | Escandallo Total: {3:0.00} EUR", calc.CosteProductos, calc.CostePersonal, calc.CosteGastosGenerales, calc.CosteTotal);
-        DrawText(sb, "F1", 7.8, "0.20 0.25 0.33", 48, y - 29, costText);
+        DrawText(sb, "F1", 7.8, "0.20 0.25 0.33", 48, y - 28, costText);
+        var objText = string.Format(CultureInfo.InvariantCulture, "Rentabilidad -> Beneficio Neto Objetivo: {0:0.00} EUR | Precio sin IVA: {1:0.00} EUR | PVP Recomendado: {2:0.00} EUR", calc.BeneficioNeto, sem.PriceExVat, calc.PvpRecomendado);
+        DrawText(sb, "F1", 7.8, "0.20 0.25 0.33", 48, y - 39, objText);
         decimal realMarginPct = calc.CosteTotal > 0m ? (sem.NetProfit / calc.CosteTotal) * 100m : 0m;
-        var marginText = string.Format(CultureInfo.InvariantCulture, "Rentabilidad -> Beneficio Neto Objetivo: {0:0.00} EUR | Precio sin IVA: {1:0.00} EUR | PVP Recomendado: {2:0.00} EUR | PVP Comercial: {3:0.00} EUR | Beneficio Neto Real: {4:0.00} EUR ({5:0.0}%)", calc.BeneficioNeto, sem.PriceExVat, calc.PvpRecomendado, svc.PvpComercialFijado, sem.NetProfit, realMarginPct);
-        DrawText(sb, "F1", 7.8, "0.20 0.25 0.33", 48, y - 41, marginText);
-        DrawLine(sb, 48, y - 46, 545, y - 46, "0.88 0.91 0.95", 0.5);
-        return RenderRecipeLines(sb, tenant, svc, y - 48, cardH);
+        var realText = string.Format(CultureInfo.InvariantCulture, "Margen Real -> PVP Comercial fijado: {0:0.00} EUR | Beneficio Neto Real: {1:0.00} EUR ({2:0.0}%)", svc.PvpComercialFijado, sem.NetProfit, realMarginPct);
+        DrawText(sb, "F2", 7.8, "0.12 0.25 0.69", 48, y - 50, realText);
+        DrawLine(sb, 48, y - 55, 545, y - 55, "0.88 0.91 0.95", 0.5);
+        return RenderRecipeLines(sb, tenant, svc, y - 56, cardH);
     }
 
     private static int RenderRecipeLines(StringBuilder sb, TenantCatalogDto tenant, EscandalloServiceRecord svc, int curY, int cardH) {
@@ -101,7 +103,7 @@ public static class RealPdfReportGenerator
             var recipeText = string.Format(CultureInfo.InvariantCulture, "  Receta -> {0}: {1:0.##} ml (Coste imputado con merma: {2:0.00} EUR)", Sanitize(item.ProductName), item.CantidadServicioMl, cost);
             DrawText(sb, "F1", 7.5, "0.27 0.33 0.42", 52, curY - (r * 12) - 8, recipeText);
         }
-        return curY + 48 - cardH - 10;
+        return curY + 56 - cardH - 10;
     }
 
     private static void RenderPageFooter(StringBuilder sb, int pageNum, int totalPages) {

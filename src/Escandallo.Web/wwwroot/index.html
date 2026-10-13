@@ -37,7 +37,7 @@
       <div class="grid-2">
         <section class="card" aria-labelledby="loginCardHeading">
           <h2 id="loginCardHeading" style="margin-top:0;">Iniciar sesión con mi cuenta</h2>
-          <div class="param-grid" style="flex-direction:column;">
+          <div class="auth-form">
             <label>Correo electrónico:
               <input id="loginEmail" type="email" value="cliente-a@estetica.es" placeholder="tu-correo@estetica.es" />
             </label>
@@ -57,7 +57,7 @@
 
         <section class="card" aria-labelledby="registerCardHeading">
           <h2 id="registerCardHeading" style="margin-top:0;">Crear cuenta nueva de cliente</h2>
-          <div class="param-grid" style="flex-direction:column;">
+          <div class="auth-form">
             <label>Nombre o titular:
               <input id="regDisplayName" type="text" placeholder="Ej. Laura Gómez — Directora" />
             </label>
@@ -89,16 +89,47 @@
         <div class="form-panel">
           <h3 style="margin:0 0 0.5rem 0; font-size:1rem;">Crear o simular un nuevo servicio estético</h3>
           <div class="form-row">
-            <input id="svcName" placeholder="Nombre del servicio" value="Radiofrecuencia Facial" aria-label="Nombre del servicio" />
-            <input id="svcDuration" type="number" step="5" value="45" aria-label="Duración en minutos" />
-            <select id="svcRole" aria-label="Profesional asignado"></select>
-            <input id="svcPvp" type="number" step="0.5" value="35.00" aria-label="Precio de venta al público en euros" />
+            <div class="input-unit-group" style="flex:2 1 200px;">
+              <label for="svcName">Servicio:</label>
+              <input id="svcName" placeholder="Nombre del servicio" value="Radiofrecuencia Facial" aria-label="Nombre del servicio" />
+            </div>
+            <div class="input-unit-group" style="flex:1 1 120px;">
+              <label for="svcDuration">Duración:</label>
+              <div class="unit-input-wrapper">
+                <input id="svcDuration" type="number" step="5" value="45" aria-label="Duración en minutos" />
+                <span class="input-unit-suffix">min</span>
+              </div>
+            </div>
+            <div class="input-unit-group" style="flex:1.5 1 160px;">
+              <label for="svcRole">Personal:</label>
+              <select id="svcRole" aria-label="Profesional asignado"></select>
+            </div>
+            <div class="input-unit-group" style="flex:1 1 120px;">
+              <label for="svcPvp">PVP:</label>
+              <div class="unit-input-wrapper">
+                <input id="svcPvp" type="number" step="0.5" value="35.00" aria-label="Precio de venta al público en euros" />
+                <span class="input-unit-suffix">€</span>
+              </div>
+            </div>
           </div>
-          <div class="form-row" style="margin-top:0.5rem;">
-            <select id="recipeProdSelect" aria-label="Producto para el servicio"></select>
-            <input id="recipeProdMl" type="number" step="0.1" value="2" aria-label="Dosis en ml para el servicio" />
-            <button class="btn btn-secondary" id="btnAddRecipeLine" type="button">Añadir producto al servicio</button>
-            <button class="btn" id="btnCreateEscandallo" type="button">Guardar nuevo servicio</button>
+          <div class="form-row" style="margin-top:0.65rem;">
+            <div class="input-unit-group" style="flex:2 1 200px;">
+              <label for="recipeProdSelect">Cosmético:</label>
+              <select id="recipeProdSelect" aria-label="Producto para el servicio"></select>
+            </div>
+            <div class="input-unit-group" style="flex:1 1 120px;">
+              <label for="recipeProdMl">Dosis:</label>
+              <div class="unit-input-wrapper">
+                <input id="recipeProdMl" type="number" step="0.1" value="2" aria-label="Dosis en ml para el servicio" />
+                <span class="input-unit-suffix">ml</span>
+              </div>
+            </div>
+            <div class="input-unit-group" style="flex:1 1 160px; justify-content:flex-end;">
+              <button class="btn btn-secondary" id="btnAddRecipeLine" type="button" style="width:100%;">Añadir producto al servicio</button>
+            </div>
+            <div class="input-unit-group" style="flex:1 1 160px; justify-content:flex-end;">
+              <button class="btn" id="btnCreateEscandallo" type="button" style="width:100%;">Guardar nuevo servicio</button>
+            </div>
           </div>
           <div id="draftRecipeList" style="margin-top:0.5rem; font-size:0.88rem; color:var(--muted);"></div>
         </div>
@@ -189,7 +220,7 @@
                 <option value="pulsacion">Pulsación</option>
                 <option value="gota">Gota</option>
                 <option value="cucharadita">Cucharadita</option>
-                <option value="ampolla_vial">Ampolla o vial monodosis</option>
+                <option value="ampolla_vial">Monodosis</option>
               </select>
               <button class="btn btn-secondary" id="btnCalcDose" type="button">Calcular ml y aplicar al producto</button>
               <span id="assistResult" class="dose-assistant-result">= 4.00 ml</span>
@@ -362,18 +393,22 @@
       badge.className = `badge ${t.subscriptionPlan === 'PRO' ? 'badge-OPTIMO' : 'badge-ALERTA'}`;
 
       const p = t.parameters;
+      const formatPct = v => {
+        const pct = v <= 1 ? v * 100 : v;
+        return Number(pct.toFixed(2)).toString();
+      };
       document.getElementById('paramInputs').innerHTML = `
-        <label>IVA (%): <input id="p_iva" type="number" step="0.01" value="${p.iva}" /></label>
-        <label>Beneficio Obj.: <input id="p_ben" type="number" step="0.01" value="${p.beneficio}" /></label>
+        <label>IVA (%): <input id="p_iva" type="number" step="0.5" min="0" max="100" value="${formatPct(p.iva)}" /></label>
+        <label>Beneficio (%): <input id="p_ben" type="number" step="0.5" min="0" max="100" value="${formatPct(p.beneficio)}" /></label>
         <label>Horas/día: <input id="p_hd" type="number" step="1" value="${p.horasDia}" /></label>
         <label>Días/mes: <input id="p_dm" type="number" step="1" value="${p.diasMes}" /></label>
         <label>Minutos/mes: <input id="p_mm" type="number" step="10" value="${p.minutosMensuales}" /></label>
-        <label>Coef. Empresa: <input id="p_ce" type="number" step="0.01" value="${p.coeficienteEmpresa}" /></label>
-        <label>Merma (%): <input id="p_me" type="number" step="0.01" value="${p.mermaPct}" /></label>
+        <label>Coef. empresa: <input id="p_ce" type="number" step="0.01" value="${p.coeficienteEmpresa}" /></label>
+        <label>Merma (%): <input id="p_me" type="number" step="0.5" min="0" max="100" value="${formatPct(p.mermaPct)}" /></label>
       `;
 
       const d = t.doseEquivalencesMl || { gota: 0.05, pulsacion: 2.0, cucharadita: 5.0, ampolla_vial: 2.0 };
-      const doseLabels = { gota: 'Gota', pulsacion: 'Pulsación', cucharadita: 'Cucharadita', ampolla_vial: 'Ampolla o vial monodosis' };
+      const doseLabels = { gota: 'Gota', pulsacion: 'Pulsación', cucharadita: 'Cucharadita', ampolla_vial: 'Monodosis' };
       document.getElementById('doseInputs').innerHTML = Object.entries(d).map(([k, v]) =>
         `<label>${doseLabels[k] || k} (ml): <input data-dose="${k}" type="number" step="0.01" value="${v}" /></label>`
       ).join('');
@@ -689,19 +724,23 @@
     document.getElementById('btnSaveParams').addEventListener('click', () => {
       const t = structuredClone(currentState.tenant);
       openCascadeModal(currentState.activeCount, 'Cambio en Parámetros Globales / Equivalencias de Dosis', async () => {
+        const parsePct = raw => {
+          const v = parseFloat(raw) || 0;
+          return v > 1 ? v / 100 : v;
+        };
         const oldBen = t.parameters.beneficio;
-        const newBen = parseFloat(document.getElementById('p_ben').value) || 0.25;
+        const newBen = parsePct(document.getElementById('p_ben').value) || 0.25;
         if (oldBen !== newBen) {
           t.costHistory.push({ costItemId: 'PARAM:Beneficio', previousValue: oldBen, newValue: newBen, changedAtIso: new Date().toISOString() });
         }
         t.parameters = {
-          iva: parseFloat(document.getElementById('p_iva').value) || 0.21,
+          iva: parsePct(document.getElementById('p_iva').value) || 0.21,
           beneficio: newBen,
           horasDia: parseFloat(document.getElementById('p_hd').value) || 8,
           diasMes: parseFloat(document.getElementById('p_dm').value) || 22,
           minutosMensuales: parseInt(document.getElementById('p_mm').value, 10) || 10560,
           coeficienteEmpresa: parseFloat(document.getElementById('p_ce').value) || 1.35,
-          mermaPct: parseFloat(document.getElementById('p_me').value) || 0.03
+          mermaPct: parsePct(document.getElementById('p_me').value) || 0.03
         };
         document.querySelectorAll('[data-dose]').forEach(inp => {
           t.doseEquivalencesMl[inp.getAttribute('data-dose')] = parseFloat(inp.value) || 1;
