@@ -151,7 +151,7 @@
           <div id="catalogPaneProd">
             <div class="table-responsive">
               <table id="productsTable">
-                <thead><tr><th>Producto</th><th>Envase (ml)</th><th>Precio (€)</th><th>Dosis (ml)</th><th>Coste por servicio</th></tr></thead>
+                <thead><tr><th>Producto</th><th>Envase (ml)</th><th>Precio (€)</th><th>Dosis (ml)</th><th>Coste por servicio</th><th>Acciones</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -160,35 +160,38 @@
               <input id="newProdMl" type="number" step="1" value="200" aria-label="Tamaño en ml" />
               <input id="newProdPrice" type="number" step="0.5" value="15" aria-label="Precio en euros" />
               <input id="newProdDose" type="number" step="0.05" value="2" aria-label="Dosis en ml" />
-              <button class="btn" id="btnAddProd" type="button">Guardar producto</button>
+              <button class="btn touch-target-44" id="btnAddProd" type="button">Guardar producto</button>
+              <button class="btn btn-secondary touch-target-44" id="btnCancelEditProd" type="button" style="display:none;">Cancelar</button>
             </div>
           </div>
 
           <div id="catalogPaneStaff" style="display:none;">
             <div class="table-responsive">
               <table id="staffTable">
-                <thead><tr><th>Categoría profesional</th><th>Sueldo mensual (€)</th><th>Coste por minuto (€)</th></tr></thead>
+                <thead><tr><th>Categoría profesional</th><th>Sueldo mensual (€)</th><th>Coste por minuto (€)</th><th>Acciones</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
             <div class="form-row" style="margin-top:0.65rem;">
               <input id="newStaffRole" placeholder="Categoría (ej. Técnico)" value="Tecnico" aria-label="Categoría profesional" />
               <input id="newStaffSalary" type="number" step="50" value="1100" aria-label="Sueldo mensual en euros" />
-              <button class="btn" id="btnSaveStaff" type="button">Guardar personal</button>
+              <button class="btn touch-target-44" id="btnSaveStaff" type="button">Guardar personal</button>
+              <button class="btn btn-secondary touch-target-44" id="btnCancelEditStaff" type="button" style="display:none;">Cancelar</button>
             </div>
           </div>
 
           <div id="catalogPaneOvh" style="display:none;">
             <div class="table-responsive">
               <table id="ovhTable">
-                <thead><tr><th>Concepto de gasto fijo</th><th>Importe mensual (€)</th></tr></thead>
+                <thead><tr><th>Concepto de gasto fijo</th><th>Importe mensual (€)</th><th>Acciones</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
             <div class="form-row" style="margin-top:0.65rem;">
               <input id="newOvhName" placeholder="Concepto (ej. Alquiler)" value="Local" aria-label="Concepto de gasto fijo" />
               <input id="newOvhAmount" type="number" step="25" value="800" aria-label="Importe mensual en euros" />
-              <button class="btn" id="btnSaveOvh" type="button">Guardar gasto fijo</button>
+              <button class="btn touch-target-44" id="btnSaveOvh" type="button">Guardar gasto fijo</button>
+              <button class="btn btn-secondary touch-target-44" id="btnCancelEditOvh" type="button" style="display:none;">Cancelar</button>
             </div>
           </div>
 
@@ -287,6 +290,17 @@
     let currentUser = null;
     let pendingAction = null;
     let draftRecipe = [{ productName: 'Cleasing Milk', cantidadServicioMl: 2 }, { productName: 'Colagen Mask', cantidadServicioMl: 4 }];
+    let editingProdName = null;
+    let editingStaffRole = null;
+    let editingOvhName = null;
+
+    function escapeHtml(str) {
+      return String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    function escapeAttr(str) {
+      return String(str ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
 
     function syncResponsiveViewport() {
       const shell = document.querySelector('.escandallo-app-shell');
@@ -322,6 +336,9 @@
       }
       if (!res.ok) return;
       currentState = await res.json();
+      if (window.cancelEditProduct) window.cancelEditProduct();
+      if (window.cancelEditStaff) window.cancelEditStaff();
+      if (window.cancelEditOverhead) window.cancelEditOverhead();
       renderAll();
     }
 
@@ -361,6 +378,127 @@
     window.removeDraftLine = function(idx) {
       draftRecipe.splice(idx, 1);
       renderDraftRecipe();
+    };
+
+    window.startEditProduct = function(name) {
+      if (!currentState || !currentState.tenant) return;
+      const p = currentState.tenant.products.find(x => x.name.toLowerCase() === name.toLowerCase());
+      if (!p) return;
+      editingProdName = p.name;
+      document.getElementById('newProdName').value = p.name;
+      document.getElementById('newProdMl').value = p.cantidadMl;
+      document.getElementById('newProdPrice').value = p.precioCompra;
+      document.getElementById('newProdDose').value = p.cantidadPorServicioMl;
+      document.getElementById('btnAddProd').textContent = 'Actualizar producto';
+      document.getElementById('btnCancelEditProd').style.display = 'inline-flex';
+      document.getElementById('newProdPrice').focus();
+    };
+
+    window.cancelEditProduct = function() {
+      editingProdName = null;
+      document.getElementById('newProdName').value = '';
+      document.getElementById('newProdMl').value = '200';
+      document.getElementById('newProdPrice').value = '15';
+      document.getElementById('newProdDose').value = '2';
+      document.getElementById('btnAddProd').textContent = 'Guardar producto';
+      document.getElementById('btnCancelEditProd').style.display = 'none';
+    };
+
+    window.deleteProduct = function(name) {
+      if (!currentState || !currentState.tenant) return;
+      const existing = currentState.tenant.products.find(p => p.name.toLowerCase() === name.toLowerCase());
+      if (!existing) return;
+      const affectedCount = currentState.escandallos.filter(e => !e.record.archived && e.record.recipe && e.record.recipe.some(r => r.productName.toLowerCase() === existing.name.toLowerCase())).length;
+      openCascadeModal(affectedCount, `Eliminar producto ${existing.name} (valor anterior: ${existing.precioCompra.toFixed(2)} €)`, async () => {
+        const t = structuredClone(currentState.tenant);
+        const idx = t.products.findIndex(p => p.name.toLowerCase() === existing.name.toLowerCase());
+        if (idx >= 0) {
+          const removed = t.products.splice(idx, 1)[0];
+          t.costHistory.push({ costItemId: `${removed.name} (Eliminado)`, previousValue: removed.precioCompra, newValue: 0, changedAtIso: new Date().toISOString() });
+        }
+        if (editingProdName && editingProdName.toLowerCase() === name.toLowerCase()) {
+          cancelEditProduct();
+        }
+        await saveTenant(t);
+      });
+    };
+
+    window.startEditStaff = function(role) {
+      if (!currentState || !currentState.tenant) return;
+      const s = currentState.tenant.staff.find(x => x.role.toLowerCase() === role.toLowerCase());
+      if (!s) return;
+      editingStaffRole = s.role;
+      document.getElementById('newStaffRole').value = s.role;
+      document.getElementById('newStaffSalary').value = s.sueldoMensual;
+      document.getElementById('btnSaveStaff').textContent = 'Actualizar personal';
+      document.getElementById('btnCancelEditStaff').style.display = 'inline-flex';
+      document.getElementById('newStaffSalary').focus();
+    };
+
+    window.cancelEditStaff = function() {
+      editingStaffRole = null;
+      document.getElementById('newStaffRole').value = 'Tecnico';
+      document.getElementById('newStaffSalary').value = '1100';
+      document.getElementById('btnSaveStaff').textContent = 'Guardar personal';
+      document.getElementById('btnCancelEditStaff').style.display = 'none';
+    };
+
+    window.deleteStaff = function(role) {
+      if (!currentState || !currentState.tenant) return;
+      const existing = currentState.tenant.staff.find(s => s.role.toLowerCase() === role.toLowerCase());
+      if (!existing) return;
+      const affectedCount = currentState.escandallos.filter(e => !e.record.archived && e.record.staffRole.toLowerCase() === existing.role.toLowerCase()).length;
+      openCascadeModal(affectedCount, `Eliminar personal ${existing.role} (sueldo anterior: ${existing.sueldoMensual.toFixed(2)} €/mes)`, async () => {
+        const t = structuredClone(currentState.tenant);
+        const idx = t.staff.findIndex(s => s.role.toLowerCase() === existing.role.toLowerCase());
+        if (idx >= 0) {
+          const removed = t.staff.splice(idx, 1)[0];
+          t.costHistory.push({ costItemId: `STAFF:${removed.role} (Eliminado)`, previousValue: removed.sueldoMensual, newValue: 0, changedAtIso: new Date().toISOString() });
+        }
+        if (editingStaffRole && editingStaffRole.toLowerCase() === role.toLowerCase()) {
+          cancelEditStaff();
+        }
+        await saveTenant(t);
+      });
+    };
+
+    window.startEditOverhead = function(concepto) {
+      if (!currentState || !currentState.tenant) return;
+      const o = currentState.tenant.overheads.find(x => x.concepto.toLowerCase() === concepto.toLowerCase());
+      if (!o) return;
+      editingOvhName = o.concepto;
+      document.getElementById('newOvhName').value = o.concepto;
+      document.getElementById('newOvhAmount').value = o.importeMensual;
+      document.getElementById('btnSaveOvh').textContent = 'Actualizar gasto fijo';
+      document.getElementById('btnCancelEditOvh').style.display = 'inline-flex';
+      document.getElementById('newOvhAmount').focus();
+    };
+
+    window.cancelEditOverhead = function() {
+      editingOvhName = null;
+      document.getElementById('newOvhName').value = 'Local';
+      document.getElementById('newOvhAmount').value = '800';
+      document.getElementById('btnSaveOvh').textContent = 'Guardar gasto fijo';
+      document.getElementById('btnCancelEditOvh').style.display = 'none';
+    };
+
+    window.deleteOverhead = function(concepto) {
+      if (!currentState || !currentState.tenant) return;
+      const existing = currentState.tenant.overheads.find(o => o.concepto.toLowerCase() === concepto.toLowerCase());
+      if (!existing) return;
+      const affectedCount = currentState.activeCount;
+      openCascadeModal(affectedCount, `Eliminar gasto fijo ${existing.concepto} (importe anterior: ${existing.importeMensual.toFixed(2)} €/mes)`, async () => {
+        const t = structuredClone(currentState.tenant);
+        const idx = t.overheads.findIndex(o => o.concepto.toLowerCase() === existing.concepto.toLowerCase());
+        if (idx >= 0) {
+          const removed = t.overheads.splice(idx, 1)[0];
+          t.costHistory.push({ costItemId: `OVH:${removed.concepto} (Eliminado)`, previousValue: removed.importeMensual, newValue: 0, changedAtIso: new Date().toISOString() });
+        }
+        if (editingOvhName && editingOvhName.toLowerCase() === concepto.toLowerCase()) {
+          cancelEditOverhead();
+        }
+        await saveTenant(t);
+      });
     };
 
     function renderRecipeLinesList(e, t) {
@@ -415,22 +553,45 @@
 
       document.querySelector('#productsTable tbody').innerHTML = t.products.map(prod => {
         const c = cat.products[prod.name];
+        const safeName = escapeAttr(prod.name);
         return `<tr>
-          <td><strong>${prod.name}</strong></td>
+          <td><strong>${escapeHtml(prod.name)}</strong></td>
           <td>${prod.cantidadMl} ml</td>
           <td>${prod.precioCompra.toFixed(2)} €</td>
           <td>${prod.cantidadPorServicioMl} ml</td>
           <td>${c ? c.costeConMerma.toFixed(4) : '0.0000'} €</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-secondary touch-target-44" type="button" style="min-height:36px;padding:0.25rem 0.6rem;font-size:0.85rem;" onclick="startEditProduct('${safeName}')">Editar</button>
+            <button class="btn btn-secondary touch-target-44" type="button" style="min-height:36px;padding:0.25rem 0.6rem;font-size:0.85rem;" onclick="deleteProduct('${safeName}')">Eliminar</button>
+          </td>
         </tr>`;
       }).join('');
 
-      document.querySelector('#staffTable tbody').innerHTML = t.staff.map(s =>
-        `<tr><td><strong>${s.role}</strong></td><td>${s.sueldoMensual.toFixed(2)} €</td><td>${cat.staff[s.role].costeMinuto.toFixed(4)} €/min</td></tr>`
-      ).join('');
+      document.querySelector('#staffTable tbody').innerHTML = t.staff.map(s => {
+        const safeRole = escapeAttr(s.role);
+        const minCost = cat.staff[s.role] ? cat.staff[s.role].costeMinuto.toFixed(4) : '0.0000';
+        return `<tr>
+          <td><strong>${escapeHtml(s.role)}</strong></td>
+          <td>${s.sueldoMensual.toFixed(2)} €</td>
+          <td>${minCost} €/min</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-secondary touch-target-44" type="button" style="min-height:36px;padding:0.25rem 0.6rem;font-size:0.85rem;" onclick="startEditStaff('${safeRole}')">Editar</button>
+            <button class="btn btn-secondary touch-target-44" type="button" style="min-height:36px;padding:0.25rem 0.6rem;font-size:0.85rem;" onclick="deleteStaff('${safeRole}')">Eliminar</button>
+          </td>
+        </tr>`;
+      }).join('');
 
-      document.querySelector('#ovhTable tbody').innerHTML = t.overheads.map(o =>
-        `<tr><td><strong>${o.concepto}</strong></td><td>${o.importeMensual.toFixed(2)} €</td></tr>`
-      ).join('');
+      document.querySelector('#ovhTable tbody').innerHTML = t.overheads.map(o => {
+        const safeConcepto = escapeAttr(o.concepto);
+        return `<tr>
+          <td><strong>${escapeHtml(o.concepto)}</strong></td>
+          <td>${o.importeMensual.toFixed(2)} €</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-secondary touch-target-44" type="button" style="min-height:36px;padding:0.25rem 0.6rem;font-size:0.85rem;" onclick="startEditOverhead('${safeConcepto}')">Editar</button>
+            <button class="btn btn-secondary touch-target-44" type="button" style="min-height:36px;padding:0.25rem 0.6rem;font-size:0.85rem;" onclick="deleteOverhead('${safeConcepto}')">Eliminar</button>
+          </td>
+        </tr>`;
+      }).join('');
 
       document.getElementById('svcRole').innerHTML = t.staff.map(s => `<option value="${s.role}">${s.role}</option>`).join('');
       document.getElementById('recipeProdSelect').innerHTML = t.products.map(pr => `<option value="${pr.name}">${pr.name}</option>`).join('');
@@ -674,6 +835,9 @@
     });
 
     async function performLogout() {
+      if (window.cancelEditProduct) window.cancelEditProduct();
+      if (window.cancelEditStaff) window.cancelEditStaff();
+      if (window.cancelEditOverhead) window.cancelEditOverhead();
       await fetch('/api/auth/logout', { method: 'POST' });
       currentState = null;
       ['#productsTable tbody', '#staffTable tbody', '#ovhTable tbody', '#escandallosList', '#archivedServicesList'].forEach(sel => {
@@ -755,63 +919,109 @@
       const ml = parseFloat(document.getElementById('newProdMl').value) || 200;
       const price = parseFloat(document.getElementById('newProdPrice').value) || 15;
       const dose = parseFloat(document.getElementById('newProdDose').value) || 2;
-      openCascadeModal(currentState.activeCount, `Producto ${name} (${price.toFixed(2)} €)`, async () => {
+      const targetName = editingProdName || name;
+      const existing = currentState.tenant.products.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+      const isEdit = !!existing;
+      const affectedCount = currentState.escandallos.filter(e => !e.record.archived && e.record.recipe && e.record.recipe.some(r => r.productName.toLowerCase() === targetName.toLowerCase())).length;
+      const summaryText = isEdit
+        ? `Actualizar producto ${existing.name} (${existing.precioCompra.toFixed(2)} € → ${price.toFixed(2)} €)`
+        : `Producto ${name} (${price.toFixed(2)} €)`;
+
+      openCascadeModal(affectedCount, summaryText, async () => {
         const t = structuredClone(currentState.tenant);
-        const existing = t.products.find(p => p.name.toLowerCase() === name.toLowerCase());
-        if (existing) {
-          if (existing.precioCompra !== price) {
-            t.costHistory.push({ costItemId: existing.name, previousValue: existing.precioCompra, newValue: price, changedAtIso: new Date().toISOString() });
+        const match = t.products.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+        if (match) {
+          if (match.precioCompra !== price) {
+            t.costHistory.push({ costItemId: match.name, previousValue: match.precioCompra, newValue: price, changedAtIso: new Date().toISOString() });
           }
-          existing.cantidadMl = ml;
-          existing.precioCompra = price;
-          existing.cantidadPorServicioMl = dose;
+          if (match.name.toLowerCase() !== name.toLowerCase()) {
+            t.escandallos.forEach(e => (e.recipe || []).forEach(r => {
+              if (r.productName.toLowerCase() === match.name.toLowerCase()) r.productName = name;
+            }));
+          }
+          match.name = name;
+          match.cantidadMl = ml;
+          match.precioCompra = price;
+          match.cantidadPorServicioMl = dose;
         } else {
           t.products.push({ name, cantidadMl: ml, precioCompra: price, cantidadPorServicioMl: dose });
           t.costHistory.push({ costItemId: name, previousValue: 0, newValue: price, changedAtIso: new Date().toISOString() });
         }
+        cancelEditProduct();
         await saveTenant(t);
       });
     });
+
+    document.getElementById('btnCancelEditProd').addEventListener('click', cancelEditProduct);
 
     document.getElementById('btnSaveStaff').addEventListener('click', () => {
       const role = document.getElementById('newStaffRole').value.trim();
       const salary = parseFloat(document.getElementById('newStaffSalary').value) || 1000;
       if (!role) return;
-      openCascadeModal(currentState.activeCount, `Personal ${role} (${salary.toFixed(2)} €/mes)`, async () => {
+      const targetRole = editingStaffRole || role;
+      const existing = currentState.tenant.staff.find(s => s.role.toLowerCase() === targetRole.toLowerCase());
+      const isEdit = !!existing;
+      const affectedCount = currentState.escandallos.filter(e => !e.record.archived && e.record.staffRole.toLowerCase() === targetRole.toLowerCase()).length;
+      const summaryText = isEdit
+        ? `Actualizar personal ${existing.role} (${existing.sueldoMensual.toFixed(2)} € → ${salary.toFixed(2)} €/mes)`
+        : `Personal ${role} (${salary.toFixed(2)} €/mes)`;
+
+      openCascadeModal(affectedCount, summaryText, async () => {
         const t = structuredClone(currentState.tenant);
-        const existing = t.staff.find(s => s.role.toLowerCase() === role.toLowerCase());
-        if (existing) {
-          if (existing.sueldoMensual !== salary) {
-            t.costHistory.push({ costItemId: `STAFF:${existing.role}`, previousValue: existing.sueldoMensual, newValue: salary, changedAtIso: new Date().toISOString() });
+        const match = t.staff.find(s => s.role.toLowerCase() === targetRole.toLowerCase());
+        if (match) {
+          if (match.sueldoMensual !== salary) {
+            t.costHistory.push({ costItemId: `STAFF:${match.role}`, previousValue: match.sueldoMensual, newValue: salary, changedAtIso: new Date().toISOString() });
           }
-          existing.sueldoMensual = salary;
+          if (match.role.toLowerCase() !== role.toLowerCase()) {
+            t.escandallos.forEach(e => {
+              if (e.staffRole.toLowerCase() === match.role.toLowerCase()) e.staffRole = role;
+            });
+          }
+          match.role = role;
+          match.sueldoMensual = salary;
         } else {
           t.staff.push({ role, sueldoMensual: salary });
           t.costHistory.push({ costItemId: `STAFF:${role}`, previousValue: 0, newValue: salary, changedAtIso: new Date().toISOString() });
         }
+        cancelEditStaff();
         await saveTenant(t);
       });
     });
+
+    document.getElementById('btnCancelEditStaff').addEventListener('click', cancelEditStaff);
 
     document.getElementById('btnSaveOvh').addEventListener('click', () => {
       const name = document.getElementById('newOvhName').value.trim();
       const amount = parseFloat(document.getElementById('newOvhAmount').value) || 250;
       if (!name) return;
-      openCascadeModal(currentState.activeCount, `Gasto General ${name} (${amount.toFixed(2)} €/mes)`, async () => {
+      const targetName = editingOvhName || name;
+      const existing = currentState.tenant.overheads.find(o => o.concepto.toLowerCase() === targetName.toLowerCase());
+      const isEdit = !!existing;
+      const affectedCount = currentState.activeCount;
+      const summaryText = isEdit
+        ? `Actualizar gasto fijo ${existing.concepto} (${existing.importeMensual.toFixed(2)} € → ${amount.toFixed(2)} €/mes)`
+        : `Gasto General ${name} (${amount.toFixed(2)} €/mes)`;
+
+      openCascadeModal(affectedCount, summaryText, async () => {
         const t = structuredClone(currentState.tenant);
-        const existing = t.overheads.find(o => o.concepto.toLowerCase() === name.toLowerCase());
-        if (existing) {
-          if (existing.importeMensual !== amount) {
-            t.costHistory.push({ costItemId: `OVH:${existing.concepto}`, previousValue: existing.importeMensual, newValue: amount, changedAtIso: new Date().toISOString() });
+        const match = t.overheads.find(o => o.concepto.toLowerCase() === targetName.toLowerCase());
+        if (match) {
+          if (match.importeMensual !== amount) {
+            t.costHistory.push({ costItemId: `OVH:${match.concepto}`, previousValue: match.importeMensual, newValue: amount, changedAtIso: new Date().toISOString() });
           }
-          existing.importeMensual = amount;
+          match.concepto = name;
+          match.importeMensual = amount;
         } else {
           t.overheads.push({ concepto: name, importeMensual: amount });
           t.costHistory.push({ costItemId: `OVH:${name}`, previousValue: 0, newValue: amount, changedAtIso: new Date().toISOString() });
         }
+        cancelEditOverhead();
         await saveTenant(t);
       });
     });
+
+    document.getElementById('btnCancelEditOvh').addEventListener('click', cancelEditOverhead);
 
     document.getElementById('btnInspectXlsx').addEventListener('click', async () => {
       const rawCellText = document.getElementById('xlsxCellInput').value;

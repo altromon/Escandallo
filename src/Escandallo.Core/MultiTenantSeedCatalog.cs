@@ -23,7 +23,7 @@ public static class MultiTenantSeedCatalog
         decimal ovhRate = CostCatalogService.CalculateOverheadMinuteRate(t.Overheads.Sum(o => o.ImporteMensual), p.MinutosMensuales);
         decimal staffSalary = t.Staff.FirstOrDefault(r => r.Role == s.StaffRole)?.SueldoMensual ?? 1000m;
         decimal staffRate = CostCatalogService.CalculateUnitCost(s.StaffRole, "personal", p.MinutosMensuales, staffSalary, 0m, p.CoeficienteEmpresa).UnitCost;
-        decimal prodCost = Math.Round(s.Recipe.Sum(line => { var pr = t.Products.First(x => x.Name == line.ProductName); return (pr.PrecioCompra / pr.CantidadMl) * line.CantidadServicioMl * (1m + p.MermaPct); }), 2, MidpointRounding.AwayFromZero);
+        decimal prodCost = Math.Round(s.Recipe.Sum(line => { var pr = t.Products.FirstOrDefault(x => x.Name == line.ProductName); return pr != null ? (pr.PrecioCompra / pr.CantidadMl) * line.CantidadServicioMl * (1m + p.MermaPct) : 0m; }), 2, MidpointRounding.AwayFromZero);
         decimal ovh = Math.Round(s.DuracionMinutos * ovhRate, 2, MidpointRounding.AwayFromZero);
         decimal stf = Math.Round(s.DuracionMinutos * staffRate, 2, MidpointRounding.AwayFromZero);
         decimal tot = prodCost + stf + ovh;
