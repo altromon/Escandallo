@@ -13,7 +13,7 @@ public static class ObservabilityService
     public static (string SerializedValue, string EffectiveLevel) RedactSensitiveFieldsAndEvaluateDebugTtl(
         string activeLevel, int elapsedMinutes, string sensitiveField)
     {
-        string effectiveLevel = (activeLevel == "DEBUG" && elapsedMinutes > 60) ? "INFO" : activeLevel;
+        string effectiveLevel = elapsedMinutes >= 60 ? "INFO" : activeLevel;
         return ($"[REDACTED]", effectiveLevel);
     }
 

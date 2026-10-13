@@ -23,9 +23,9 @@ public static class CascadeHistoryService
     public static (string State, int Status) EnforceHistoryImmutability(
         int versions, int activeCount, string operation)
     {
-        if (operation == "DELETE_FISICO_COSTE_EN_USO") return ("FORZAR_ARCHIVADO_LOGICO", 409);
-        if (operation == "DELETE_SNAPSHOT_HISTORICO") return ("HISTORICO_INMUTABLE", 403);
-        if (operation == "UPDATE_COSTE_SIN_CAMBIO_DE_IMPORTE") return ("IDEMPOTENTE_SIN_SNAPSHOT", 200);
+        if (operation == "DELETE_FISICO_COSTE_EN_USO") return ("BLOQUEADO_SOLO_ARCHIVADO_PERMITIDO", 409);
+        if (operation == "DELETE_SNAPSHOT_HISTORICO") return ("HISTORICO_INMUTABLE_PROTEGIDO", 403);
+        if (operation == "UPDATE_COSTE_SIN_CAMBIO_DE_IMPORTE") return ("IDEMPOTENTE_SIN_NUEVA_VERSION", 200);
         return ($"PERMITIDO (FR-HIST-001): {operation}", 200);
     }
 }

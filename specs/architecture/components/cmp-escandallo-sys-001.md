@@ -1,21 +1,23 @@
 ---
 id: CMP-ESCANDALLO-SYS-001
 type: component
-title: Plataforma SaaS Multi-Tenant de Escandallos y Rentabilidad para Centros de Estética (Sistema Raíz)
+title: "Sistema Raíz: Plataforma SaaS de Escandallos para Centros de Estética (.NET 10 LTS + Blazor)"
 status: proposed
-version: 1.0.0
-schema-version: '1.0'
+version: "1.1.0"
+schema-version: "1.0"
 level: 1
-bounded-context: Escandallo SaaS Platform
+bounded-context: "costing-and-pricing"
 parent-component: null
 implementation-type: composite
 implements-use-cases:
+  - UC-AUTH-001
   - UC-COST-CATALOG-001
   - UC-ESCANDALLO-CALC-001
   - UC-EXEC-REPORT-001
   - UC-SUBSCRIPTION-001
   - UC-OBSERVABILITY-001
 satisfies-requirements:
+  - FR-AUTH-001
   - FR-TENANT-001
   - FR-COST-001
   - FR-CALC-001
@@ -32,67 +34,52 @@ satisfies-requirements:
   - SEC-REQ-OBS-001
 hosted-in-enclave: SEC-ENC-APP-CORE-001
 interfaces:
-  - name: Public Web & REST API Gateway
-    protocol: HTTPS / REST / JSON
-    contract-spec: specs/architecture/08-cross-cutting-concepts.md
-  - name: Stripe Webhook Ingestion Endpoint
-    protocol: HTTPS / HMAC-SHA256
-    contract-spec: specs/architecture/08-cross-cutting-concepts.md
+  - name: "Interfaz Web Adaptativa Blazor (SSR + Interactive Server)"
+    protocol: "HTTPS / WSS"
+    contract-spec: "specs/architecture/components/cmp-web-ui-001.md"
+  - name: "API de Recepción de Webhooks de Stripe"
+    protocol: "REST/HTTP"
+    contract-spec: "specs/architecture/components/cmp-billing-stripe-001.md"
 supersedes: null
 superseded-by: null
 ---
 
+# CMP-ESCANDALLO-SYS-001: Plataforma SaaS de Escandallos para Centros de Estética (.NET 10 LTS + Blazor)
 
-# CMP-ESCANDALLO-SYS-001: Plataforma SaaS Multi-Tenant de Escandallos y Rentabilidad para Centros de Estética (Sistema Raíz)
+## 1. Propósito, Responsabilidad y Bounded Context
 
-## 1. Purpose, Responsibility, and Bounded Context
+`CMP-ESCANDALLO-SYS-001` es el sistema compuesto raíz (Nivel 1) que materializa el Bounded Context `costing-and-pricing` (`TERM-ESCANDALLO-001`). Agrupa en un **Monolito Modular Hexagonal sobre .NET 10 LTS y ASP.NET Core Blazor Web App** la totalidad de capacidades de negocio, seguridad multi-tenant y observabilidad dual de la plataforma.
 
-Componente compuesto de Nivel 1 (Sistema Raíz) que encapsula el monolito modular de la plataforma SaaS de cálculo de escandallos, beneficios y PVP para centros de estética (`ADR-002-MODULAR-MONOLITH-STACK`), desplegado sobre la topología rentable Cloudflare Edge + VPS Cloud Europeo (`ADR-001-COST-EFFECTIVE-DEPLOYMENT`). Coordina los seis subsistemas de Nivel 2 garantizando aislamiento multi-tenant estricto (`SEC-REQ-TENANT-001`), exactitud aritmética (`ADR-004-EXACT-DECIMAL-AND-CASCADE-ENGINE`) y observabilidad dual (`ADR-005-DUAL-OBSERVABILITY-AND-SAFE-DOCUMENTS`).
-
-## 2. Structure and Connectivity Diagram (arc42 Sec. 5 / NAF v4)
+## 2. Diagrama de Estructura y Conectividad (arc42 Sec. 5 / NAF v4)
 
 ```mermaid
 graph TD
-    User["ACT-ESTHETIC-USER-001 (PC / Tablet / Móvil)"] -->|HTTPS TLS 1.3| WAF["SEC-ENC-EDGE-WAF-001 (Cloudflare WAF)"]
-    Maintainer["ACT-MAINTAINER-001 (Operador)"] -->|HTTPS TLS 1.3| WAF
-    Stripe["ACT-STRIPE-001 (Stripe Webhooks)"] -->|HTTPS + Stripe-Signature| WAF
+    EstheticUser["ACT-ESTHETIC-USER-001: Directora / Gerente"] -->|"HTTPS / WSS (TLS 1.3)"| SYS["CMP-ESCANDALLO-SYS-001 (.NET 10 Modular Monolith)"]
+    Maintainer["ACT-MAINTAINER-001: Administrador"] -->|"HTTPS (TLS 1.3)"| SYS
+    Stripe["ACT-STRIPE-001: Pasarela Stripe"] -->|"HTTPS POST (HMAC-SHA256)"| SYS
 
-    subgraph SYS["CMP-ESCANDALLO-SYS-001 (Monolito Modular .NET 8/9 LTS)"]
-        UI["CMP-WEB-UI-001 (Cliente Web Blazor WCAG 2.1 AA)"]
-        IAM["CMP-IAM-TENANT-001 (Auth, RBAC, RLS & Rate Limit)"]
-        ENGINE["CMP-COST-ENGINE-001 (Motor Costes, Escandallos & Cascada)"]
-        DOC["CMP-DOC-IO-001 (Importador .xlsx & Informes PDF/Excel)"]
-        BILL["CMP-BILLING-STRIPE-001 (Cuota Freemium & Stripe.net)"]
-        OBS["CMP-OBS-TELEMETRY-001 (Logs Serilog, OTLP & Redactado)"]
-    end
-
-    WAF --> UI
-    UI -->|REST JSON / Blazor SSR| IAM
-    IAM --> ENGINE
-    IAM --> DOC
-    IAM --> BILL
-    IAM --> OBS
-    ENGINE --> DB[("PostgreSQL 16 (RLS Enabled)")]
-    BILL --> DB
-    OBS --> DB
+    SYS -->|"In-Process UI"| WebUI["CMP-WEB-UI-001 (Blazor Web App)"]
+    SYS -->|"In-Process Security"| IAM["CMP-IAM-TENANT-001 (Tenant Guard & RateLimiter)"]
+    SYS -->|"In-Process Domain DLL"| Engine["CMP-COST-ENGINE-001 (Decimal 128-bit & Cascade)"]
+    SYS -->|"In-Process Document IO"| DocIO["CMP-DOC-IO-001 (Safe .xlsx / .pdf)"]
+    SYS -->|"In-Process Billing"| Billing["CMP-BILLING-STRIPE-001 (Freemium Quota & Stripe)"]
+    SYS -->|"In-Process Telemetry"| Obs["CMP-OBS-TELEMETRY-001 (Serilog + OpenTelemetry)"]
 ```
 
-## 3. Interface Contracts and Execution Policies
+## 3. Contratos de Interfaz y Políticas de Ejecución
 
-- **Execution Mechanism**: Proceso contenedorizado `.NET 8/9 LTS` (`ASP.NET Core Kestrel`) gestionado por Docker Compose detrás de Caddy Reverse Proxy y Cloudflare Edge WAF.
-- **Fault Tolerance and Performance**: Huella de memoria máxima acotada a `512 MB RAM` por contenedor de aplicación; latencia $p95 < 100\text{ ms}$ en operaciones de cálculo y recálculo en cascada.
+- **Mecanismo de Ejecución**: Proceso contenedorizado único `Kestrel` sobre imagen endurecida `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled` (`UID 1654`, *read-only rootfs*), alojado en el enclave `SEC-ENC-APP-CORE-001` detrás de `SEC-ENC-EDGE-WAF-001` (Cloudflare + Caddy mTLS con `KnownProxies`).
+- **Tolerancia a Fallos, Rendimiento y Blindaje de Seguridad (`SEC-REQ-*`)**:
+  - Huella de memoria acotada ($\le 2\text{ GB}$ RAM) protegida con cotas de `CircuitOptions` en SignalR ($\le 5$ circuitos/usuario, mensajes $\le 32\text{ KB}$) y `RecyclableMemoryStream` + `SemaphoreSlim(2, 2)` en generación documental (`SEC-REQ-DOS-001`).
+  - Tiempo de respuesta interactivo `< 100 ms` en simulación financiera, recálculo transaccional en cascada `< 2000 ms` ($\le 200$ escandallos, máx. `30 mutaciones/minuto`) y guardas de rango en `System.Decimal` (128 bits) contra `OverflowException` (`SEC-REQ-XLSX-001`, `SEC-REQ-DOS-001`).
+  - Aislamiento estricto multi-tenant respaldado por revalidación continua de `AuthenticationStateProvider` en servidor y PostgreSQL 16 (`FORCE ROW LEVEL SECURITY` *fail-closed*, rol `NOSUPERUSER NOBYPASSRLS` y `SET LOCAL app.current_center_id`) (`SEC-REQ-TENANT-001`).
+  - Serialización `SELECT ... FOR UPDATE` de cuota Freemium, verificación `HMAC-SHA256` sobre cuerpo crudo ($\le 64\text{ KB}$) con idempotencia monótona en Stripe (`SEC-REQ-BILLING-001`), y telemetría dual con `ToMaximumDepth(3)`, redacción en `Exception.Message` y canal `SECURITY` inmutable (`SEC-REQ-OBS-001`).
 
 ---
 
-## 4. Revision History and Version Control
+## 4. Historial de Revisiones y Control de Versiones
 
-| Version | Date | Author / Agent | Change Description | Change Reference (Change/PR) |
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-05 | agent-system-architect | Definición inicial del componente raíz del sistema | ARCH-INIT-001 |
-
-
-## Historial de Revisiones
-
-| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
-| :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-07 | agent-devops | Integración de incremento de entrega chg-001-escandallo-mvp | chg-001-escandallo-mvp |
+| **1.0.0** | 2026-10-08 | `agent-system-architect` | Definición inicial del componente raíz compuesto (.NET 10 LTS + Blazor) | `chg-001-escandallo-mvp` |
+| **1.1.0** | 2026-10-08 | `agent-system-architect` | Integración de controles técnicos de ciberseguridad v1.1.0 (`SEC-REQ-*` sobre Blazor SignalR, Npgsql RLS, LOH, Stripe y Serilog) | `chg-001-escandallo-mvp` |

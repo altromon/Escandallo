@@ -26,8 +26,9 @@ public static class StripeBillingQuotaService
         };
     }
 
-    public static (string Outcome, int Status) EvaluateAtomicQuotaAndWebhookWindow(int activeCount, int hmacAgeSeconds) =>
-        (hmacAgeSeconds > 300, activeCount >= 2) switch
+    public static (string Outcome, int Status) EvaluateAtomicQuotaAndWebhookWindow(
+        int activeCount, int hmacAgeSeconds, int payloadKb = 32) =>
+        (hmacAgeSeconds > 300 || payloadKb > 64, activeCount >= 2) switch
         {
             (true, _) => ("RECHAZADO_VENTANA_HMAC_EXPIRADA", 400),
             (false, true) => ("BLOQUEADO_LIMITE_GRATUITO_2", 402),

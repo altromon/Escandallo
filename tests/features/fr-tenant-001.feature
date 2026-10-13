@@ -31,12 +31,12 @@ Feature: Aislamiento Multi-Tenant de Centros de Estética por Cliente
 
   @security @mitigation
   Scenario Outline: Rechazo controlado de identificadores de centro fuera de rango, vacíos o no autorizados
-    Given una petición hacia el endpoint multi-tenant con sesión "<estado_sesion>"
-    When se envía el identificador de centro "<center_id_invalido>" para la operación "<operacion>"
-    Then el servidor rechaza la operación de forma controlada con código HTTP <codigo_error> sin exponer trazas internas
+    Given una petición entrante con estado de autenticación "<estado_auth>" e identificador de centro "<center_id>"
+    When el servidor valida el contexto de inquilino antes de acceder al catálogo
+    Then el servidor rechaza la solicitud con código HTTP <codigo_http>
 
     Examples:
-      | estado_sesion | center_id_invalido                   | operacion          | codigo_error |
-      | autenticado   | ""                                   | listar_escandallos | 400          |
-      | autenticado   | "not-a-valid-uuid-format"            | copiar_catalogo    | 400          |
-      | anonimo       | "550e8400-e29b-41d4-a716-4466554400" | listar_escandallos | 401          |
+      | estado_auth | center_id                 | codigo_http |
+      | autenticado |                           | 400         |
+      | autenticado | not-a-valid-uuid-format   | 400         |
+      | anonimo     | Centro Madrid             | 401         |

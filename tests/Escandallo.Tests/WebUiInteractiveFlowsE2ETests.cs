@@ -1,4 +1,3 @@
-using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -7,7 +6,6 @@ using Escandallo.Core;
 using Escandallo.Core.Components;
 using Escandallo.Web;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Xunit;
 
 namespace Escandallo.Tests;
@@ -17,9 +15,18 @@ public class WebUiInteractiveFlowsE2ETests
     [Fact]
     public void CompiledBlazorComponents_RenderValidWaiAriaDom_ViaBunit() {
         using var ctx = new TestContext();
-        Assert.Contains("role=\"application\"", ctx.RenderComponent<MainResponsiveLayout>().Markup);
+        var layoutMarkup = ctx.RenderComponent<MainResponsiveLayout>().Markup;
+        Assert.Contains("role=\"application\"", layoutMarkup);
+        Assert.Contains("point-1-full-width", layoutMarkup);
+        Assert.Contains("Impuestos y equivalencias", layoutMarkup);
+        Assert.True(layoutMarkup.IndexOf("Calculadora de servicios", System.StringComparison.Ordinal) < layoutMarkup.IndexOf("Catálogo de costes", System.StringComparison.Ordinal));
         Assert.Contains("role=\"tablist\"", ctx.RenderComponent<CostCatalogPage>().Markup);
-        Assert.Contains("aria-live=\"polite\"", ctx.RenderComponent<EscandalloBuilderPage>().Markup);
+        var builderMarkup = ctx.RenderComponent<EscandalloBuilderPage>().Markup;
+        Assert.Contains("id=\"escandallosSection\"", builderMarkup);
+        Assert.Contains("point-1-full-width", builderMarkup);
+        Assert.Contains("aria-live=\"polite\"", builderMarkup);
+        Assert.Contains("<details", builderMarkup);
+        Assert.Contains("aria-expanded=\"false\"", builderMarkup);
         Assert.Contains("role=\"dialog\"", ctx.RenderComponent<CascadeImpactModal>().Markup);
         Assert.Contains("14,90 EUR/mes", ctx.RenderComponent<FreemiumPaywallModal>().Markup);
     }
@@ -33,15 +40,8 @@ public class WebUiInteractiveFlowsE2ETests
         await app.StopAsync();
     }
 
-    private static WebApplication StartServer(string url) {
-        var root = Path.GetFullPath(Path.Combine(System.AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Escandallo.Web"));
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { ContentRootPath = root, WebRootPath = Path.Combine(root, "wwwroot") });
-        builder.WebHost.UseUrls(url);
-        var app = builder.Build();
-        EscandalloApiRoutes.MapStateAndCatalogEndpoints(app);
-        EscandalloExportRoutes.MapDocumentAndBillingEndpoints(app);
-        return app;
-    }
+    private static WebApplication StartServer(string url) =>
+        Program.CreateWebApp([], url);
 
     private static async Task VerifyAllIntegratedEndpointsAsync(HttpClient client) {
         var t = MultiTenantSeedCatalog.CreateDefaultCenter("center-e2e-flows", "Centro E2E");

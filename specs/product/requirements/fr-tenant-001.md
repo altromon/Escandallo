@@ -1,23 +1,23 @@
 ---
 id: FR-TENANT-001
 type: requirement
-title: Aislamiento Multi-Tenant de Centros de Estética por Cliente
-status: active
-version: 1.0.0
-schema-version: '1.0'
+title: "Aislamiento Multi-Tenant de Centros de Estética por Cliente"
+status: draft
+version: "1.0.0"
+schema-version: "1.0"
 category: functional
 derives-from:
+  - UC-AUTH-001
   - UC-COST-CATALOG-001
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - '@FR-TENANT-001'
-  - '@automated'
-  - '@regression'
+  - "@FR-TENANT-001"
+  - "@automated"
+  - "@regression"
 supersedes: null
 superseded-by: null
 ---
-
 
 # Requirement: Aislamiento Multi-Tenant de Centros de Estética por Cliente
 
@@ -53,15 +53,15 @@ Feature: Aislamiento Multi-Tenant de Centros de Estética por Cliente
 
   @security @mitigation
   Scenario Outline: Rechazo controlado de identificadores de centro fuera de rango, vacíos o no autorizados
-    Given una petición hacia el endpoint multi-tenant con sesión "<estado_sesion>"
-    When se envía el identificador de centro "<center_id_invalido>" para la operación "<operacion>"
-    Then el servidor rechaza la operación de forma controlada con código HTTP <codigo_error> sin exponer trazas internas
+    Given una petición entrante con estado de autenticación "<estado_auth>" e identificador de centro "<center_id>"
+    When el servidor valida el contexto de inquilino antes de acceder al catálogo
+    Then el servidor rechaza la solicitud con código HTTP <codigo_http>
 
     Examples:
-      | estado_sesion | center_id_invalido                   | operacion          | codigo_error |
-      | autenticado   | ""                                   | listar_escandallos | 400          |
-      | autenticado   | "not-a-valid-uuid-format"            | copiar_catalogo    | 400          |
-      | anonimo       | "550e8400-e29b-41d4-a716-4466554400" | listar_escandallos | 401          |
+      | estado_auth | center_id                 | codigo_http |
+      | autenticado |                           | 400         |
+      | autenticado | not-a-valid-uuid-format   | 400         |
+      | anonimo     | Centro Madrid             | 401         |
 ```
 
 ## 3. Revision History
@@ -70,10 +70,3 @@ Feature: Aislamiento Multi-Tenant de Centros de Estética por Cliente
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-04 | agent-product-analyst | Definición inicial del requisito de aislamiento multi-centro y multi-cliente. |
 | 1.2.0 | 2026-10-05 | agent-product-analyst | Incorporación de Mejora M4 (copia de catálogo entre centros del mismo propietario). |
-
-
-## Historial de Revisiones
-
-| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
-| :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

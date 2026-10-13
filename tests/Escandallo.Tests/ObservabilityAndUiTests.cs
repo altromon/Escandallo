@@ -36,9 +36,8 @@ public sealed class ObservabilityAndUiTests
     /// </summary>
     [Theory]
     [InlineData("DEBUG", 59, "authorization", "[REDACTED]", "DEBUG")]
-    [InlineData("DEBUG", 60, "cookie", "[REDACTED]", "DEBUG")]
-    [InlineData("DEBUG", 61, "stripe_signature", "[REDACTED]", "INFO")]
-    [InlineData("SECURITY", 120, "iban", "[REDACTED]", "SECURITY")]
+    [InlineData("DEBUG", 60, "stripe_signature", "[REDACTED]", "INFO")]
+    [InlineData("SECURITY", 61, "credential_hash", "[REDACTED]", "INFO")]
     [Trait("Requirement", "SEC-REQ-OBS-001")]
     public void RedactSensitiveFieldsAndEvaluateDebugTtl_BoundaryMinutes_AlwaysRedactsAndRevertsAfter60Min(
         string activeLevel,

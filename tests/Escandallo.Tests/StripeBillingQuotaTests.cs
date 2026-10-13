@@ -68,6 +68,7 @@ public sealed class StripeBillingQuotaTests
     [InlineData("checkout.session.completed", "firma_hmac_invalida", 10, 400)]
     [InlineData("invoice.paid", "cabecera_ausente", 5, 400)]
     [InlineData("checkout.session.completed", "timestamp_expirado_replay", 600, 400)]
+    [InlineData("checkout.session.completed", "payload_raw_modificado_en_stream", 12, 400)]
     [InlineData("customer.subscription.updated", "event_id_duplicado", 15, 200)]
     [Trait("Requirement", "SEC-REQ-BILLING-001")]
     public void ProcessStripeWebhook_ForgedOrReplayedPayloads_RejectsInvalidAndHandlesIdempotence(

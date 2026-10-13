@@ -34,20 +34,21 @@ public static class EscandalloExportRoutes
     }
 
     private static IResult ExportPdf(string? centerId, string? serviceId) {
-        var (t, svc, calc, active) = Resolve(centerId, serviceId);
+        var (t, _, _, active) = Resolve(centerId, serviceId);
         if (StripeBillingQuotaService.AuthorizeEscandalloOperation(t.SubscriptionPlan == "PRO" ? "active" : "none", active, "exportar_escandallo").HttpStatus == 402) return Results.StatusCode(402);
-        return Results.File(RealPdfReportGenerator.BuildPdfBytes(t.CenterName, svc.Name, calc, svc.PvpComercialFijado, t.Parameters), "application/pdf", $"Escandallo_{svc.Id}.pdf");
+        return Results.File(RealPdfReportGenerator.BuildExecutiveCenterPdfBytes(t), "application/pdf", $"Escandallos_{t.CenterId}.pdf");
     }
 
     private static IResult ExportXlsx(string? centerId, string? serviceId) {
         var (t, svc, calc, active) = Resolve(centerId, serviceId);
         if (StripeBillingQuotaService.AuthorizeEscandalloOperation(t.SubscriptionPlan == "PRO" ? "active" : "none", active, "exportar_escandallo").HttpStatus == 402) return Results.StatusCode(402);
-        return Results.File(RealXlsxReportGenerator.BuildXlsxBytes(t.CenterName, svc.Name, calc, svc.PvpComercialFijado, t.Parameters), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Escandallo_{svc.Id}.xlsx");
+        var label = string.IsNullOrWhiteSpace(serviceId) ? string.Join(" + ", t.Escandallos.Where(e => !e.Archived).Select(e => e.Name)) : svc.Name;
+        return Results.File(RealXlsxReportGenerator.BuildXlsxBytes(t.CenterName, label, calc, svc.PvpComercialFijado, t.Parameters), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Escandallos_{t.CenterId}.xlsx");
     }
 
     private static (TenantCatalogDto T, EscandalloServiceRecord Svc, EscandalloCalculationResult Calc, int Active) Resolve(string? cId, string? sId) {
         var t = MultiTenantAppStore.GetCenter(string.IsNullOrEmpty(cId) ? "center-madrid-01" : cId);
-        var svc = t.Escandallos.FirstOrDefault(e => e.Id == sId) ?? t.Escandallos[0];
+        var svc = t.Escandallos.FirstOrDefault(e => e.Id == sId) ?? t.Escandallos.FirstOrDefault(e => !e.Archived) ?? t.Escandallos[0];
         return (t, svc, MultiTenantSeedCatalog.ComputeService(t, svc), t.Escandallos.Count(e => !e.Archived));
     }
 }

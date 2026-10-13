@@ -64,8 +64,8 @@ public sealed class EscandalloCalculatorTests
     [InlineData(0, 10.0, 0.50, 0.21, 422, "DURACION_SERVICIO_INVALIDA")]
     [InlineData(-30, 10.0, 0.50, 0.21, 422, "DURACION_SERVICIO_INVALIDA")]
     [InlineData(60, -5.0, 0.50, 0.21, 422, "DOSIS_PRODUCTO_NEGATIVA")]
-    [InlineData(60, 10.0, -1.20, 0.21, 422, "MARGEN_BENEFICIO_FUERA_RANGO")]
-    [InlineData(60, 10.0, 0.50, -0.10, 422, "IVA_NEGATIVO_INVALIDO")]
+    [InlineData(60, 10.0, -1.20, 0.21, 422, "MARGEN_BENEFICIO_FUERA_DE_RANGO")]
+    [InlineData(60, 10.0, 0.50, -0.10, 422, "IVA_FUERA_DE_RANGO")]
     [Trait("Requirement", "FR-CALC-001")]
     public void ValidateEscandalloRecipe_OutOfRangeParameters_ReturnsHttp422AndValidationCode(
         int durationMinutes,

@@ -65,9 +65,12 @@ public sealed class CostCatalogTests
     [InlineData("producto", 0, 34.51, 0.05, 422, "CANTIDAD_DIVISOR_CERO")]
     [InlineData("producto", -100, 34.51, 0.05, 422, "CANTIDAD_NEGATIVA_INVALIDA")]
     [InlineData("producto", 500, -15.00, 0.05, 422, "IMPORTE_NEGATIVO_INVALIDO")]
+    [InlineData("producto", 500, 99999999999.99, 0.05, 422, "DESBORDAMIENTO_DECIMAL_128BIT")]
     [InlineData("producto", 250, 50.00, 1.05, 422, "MERMA_FUERA_DE_RANGO_0_A_99_PCT")]
     [InlineData("personal", 0, 1100.00, 0.00, 422, "MINUTOS_MENSUALES_DIVISOR_CERO")]
+    [InlineData("gasto_general", 0, 875.00, 0.00, 422, "MINUTOS_MENSUALES_DIVISOR_CERO")]
     [Trait("Requirement", "FR-COST-001")]
+    [Trait("Requirement", "SEC-REQ-XLSX-001")]
     public void ValidateCostInput_OutOfRangeValues_ReturnsHttp422AndReason(
         string itemType,
         decimal invalidQty,

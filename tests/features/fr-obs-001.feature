@@ -31,12 +31,12 @@ Feature: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mante
 
   Scenario Outline: Rechazo controlado de niveles de severidad inexistentes o formatos de exportación de telemetría inválidos
     Given el usuario "ops@escandallo.es" está autenticado con el rol "ACT-MAINTAINER-001"
-    When solicita configurar el nivel "<nivel_log>" y exportar telemetría en el formato "<formato_exportacion>"
-    Then el servidor responde con código HTTP <codigo_http> y estado "<estado_operacion>"
+    When solicita configurar el nivel de log "<nivel_solicitado>" o exportar telemetría en formato "<formato_exportacion>"
+    Then el servidor responde con código HTTP <codigo_http> y estado de validación "<estado_validacion>"
 
     Examples:
-      | nivel_log | formato_exportacion | codigo_http | estado_operacion                  |
-      | DEBUG     | JSON                | 200         | EXPORTACION_TELEMETRIA_OK         |
-      | SECURITY  | OTLP                | 200         | EXPORTACION_TELEMETRIA_OK         |
-      | VERBOSE99 | JSON                | 400         | NIVEL_GRANULARIDAD_NO_SOPORTADO   |
-      | INFO      | EXE                 | 400         | FORMATO_TELEMETRIA_NO_SOPORTADO   |
+      | nivel_solicitado | formato_exportacion | codigo_http | estado_validacion          |
+      | DEBUG            | JSON                | 200         | APLICADO_Y_EXPORTADO       |
+      | SECURITY         | OTLP                | 200         | APLICADO_Y_EXPORTADO       |
+      | VERBOSE99        | JSON                | 400         | NIVEL_GRANULARIDAD_INVALIDO|
+      | INFO             | EXE                 | 400         | FORMATO_TELEMETRIA_INVALIDO|

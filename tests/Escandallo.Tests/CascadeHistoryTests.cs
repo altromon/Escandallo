@@ -59,9 +59,9 @@ public sealed class CascadeHistoryTests
     /// Escenarios Fuera de Rango / Inválidos (FR-HIST-001): Bloqueo de borrado físico y protección de inmutabilidad.
     /// </summary>
     [Theory]
-    [InlineData(2, 1, "DELETE_FISICO_COSTE_EN_USO", "FORZAR_ARCHIVADO_LOGICO", 409)]
-    [InlineData(3, 0, "DELETE_SNAPSHOT_HISTORICO", "HISTORICO_INMUTABLE", 403)]
-    [InlineData(1, 2, "UPDATE_COSTE_SIN_CAMBIO_DE_IMPORTE", "IDEMPOTENTE_SIN_SNAPSHOT", 200)]
+    [InlineData(2, 3, "DELETE_FISICO_COSTE_EN_USO", "BLOQUEADO_SOLO_ARCHIVADO_PERMITIDO", 409)]
+    [InlineData(1, 1, "DELETE_SNAPSHOT_HISTORICO", "HISTORICO_INMUTABLE_PROTEGIDO", 403)]
+    [InlineData(2, 3, "UPDATE_COSTE_SIN_CAMBIO_DE_IMPORTE", "IDEMPOTENTE_SIN_NUEVA_VERSION", 200)]
     [Trait("Requirement", "FR-HIST-001")]
     public void EnforceHistoryImmutability_RestrictedOperations_ReturnsExpectedGuardResponse(
         int previousVersions,

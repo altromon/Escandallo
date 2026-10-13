@@ -1,77 +1,69 @@
 ---
 id: CMP-BILLING-STRIPE-001
 type: component
-title: Módulo de Suscripciones, Control Atómico de Cuota Freemium e Integración con Stripe
+title: "Gestor Atómico de Cuota Freemium y Pasarela Idempotente de Suscripciones Stripe"
 status: proposed
-version: 1.0.0
-schema-version: '1.0'
+version: "1.1.0"
+schema-version: "1.0"
 level: 2
-bounded-context: Subscription & Monetization
+bounded-context: "costing-and-pricing"
 parent-component: CMP-ESCANDALLO-SYS-001
 implementation-type: service
 implements-use-cases:
-  - UC-ESCANDALLO-CALC-001
   - UC-SUBSCRIPTION-001
+  - UC-ESCANDALLO-CALC-001
+  - UC-EXEC-REPORT-001
 satisfies-requirements:
   - FR-BILLING-001
   - QR-SEC-001
   - SEC-REQ-BILLING-001
-  - FR-TENANT-001
-  - FR-COST-001
-  - FR-CALC-001
-  - FR-HIST-001
-  - FR-REPORT-001
-  - FR-OBS-001
-  - QR-UI-A11Y-001
-  - SEC-REQ-TENANT-001
-  - SEC-REQ-XLSX-001
-  - SEC-REQ-DOS-001
-  - SEC-REQ-OBS-001
 hosted-in-enclave: SEC-ENC-APP-CORE-001
 interfaces:
-  - name: Stripe Checkout, Customer Portal & Webhook Receiver API
-    protocol: HTTPS / REST / HMAC-SHA256
-    contract-spec: specs/security/requirements/sec-req-billing-001.md
+  - name: "IFreemiumQuotaService & Stripe Webhook Endpoint (/api/v1/billing/webhooks/stripe)"
+    protocol: "REST/HTTP & In-Process API"
+    contract-spec: "specs/security/requirements/sec-req-billing-001.md"
 supersedes: null
 superseded-by: null
 ---
 
+# CMP-BILLING-STRIPE-001: Gestor Atómico de Cuota Freemium y Pasarela Idempotente de Suscripciones Stripe
 
-# CMP-BILLING-STRIPE-001: Módulo de Suscripciones, Control Atómico de Cuota Freemium e Integración con Stripe
+## 1. Propósito, Responsabilidad y Bounded Context
 
-## 1. Purpose, Responsibility, and Bounded Context
+`CMP-BILLING-STRIPE-001` es el subsistema de monetización y control de licencias SaaS (Nivel 2) dentro de `costing-and-pricing`. Garantiza en el servidor el cumplimiento atómico multi-circuito del límite del plan gratuito (`<= 2` escandallos en estado `active` por centro, permitiendo archivar/desarchivar mediante M1 sin perder historial según `BR-FREEMIUM-QUOTA-001`), vincula en servidor el `metadata.center_id` en sesiones de **Stripe Checkout** y procesa webhooks verificados criptográficamente sobre stream crudo con `HMAC-SHA256` e idempotencia monótona (`SEC-REQ-BILLING-001`).
 
-Subsistema de monetización y control de licencias de Nivel 2 (`ADR-003-MULTITENANT-RLS-AND-ATOMIC-QUOTA`) responsable de hacer cumplir `BR-FREEMIUM-QUOTA-001`, `FR-BILLING-001` y `SEC-REQ-BILLING-001`:
-1. **Control Atómico de Cuota Gratuita (2 Escandallos `active` por Usuario y Centro)**: Adquiere bloqueo exclusivo de fila (`SELECT ... FOR UPDATE` sobre `centers`) antes de permitir la creación, duplicación (`M4`) o reactivación desde `archived` (`M1`) de un escandallo, impidiendo condiciones de carrera concurrentes.
-2. **Política de Exceso Post-Cancelación (`M1`)**: Si la suscripción de un centro pasa a `canceled` / `unpaid` / `past_due` mientras tiene $>2$ escandallos en estado `active`, bloquea toda creación, duplicación, edición y exportación hasta que el usuario archive el exceso dejando $\le 2$ activos o reactive su suscripción.
-3. **Planes de Suscripción y Webhooks Verificados en Stripe**: Gestiona sesiones de Stripe Checkout para el **Plan Mensual (`14,90 EUR/mes` + IVA)** y **Plan Anual (`149,00 EUR/año` + IVA)** por centro de estética, validando criptográficamente `Stripe-Signature` (HMAC-SHA256, tolerancia máxima de `300 segundos`) y garantizando idempotencia por `event.id`.
-
-## 2. Structure and Connectivity Diagram (arc42 Sec. 5 / NAF v4)
+## 2. Diagrama de Estructura y Conectividad (arc42 Sec. 5 / NAF v4)
 
 ```mermaid
 graph TD
-    Engine["CMP-COST-ENGINE-001"] -->|Check Quota FOR UPDATE| Bill["CMP-BILLING-STRIPE-001"]
-    Bill -->|Checkout Session / Portal| StripeAPI["ACT-STRIPE-001 (Stripe API)"]
-    StripeWebhook["Webhook Entrante Stripe"] -->|Raw Body + Stripe-Signature| Bill
-    Bill -->|Verifica HMAC <= 300s & Idempotencia| DB[("PostgreSQL 16: subscriptions, stripe_webhook_events")]
+    UI["CMP-WEB-UI-001 (Creación / M4 Copy / Desarchivado M1)"] --> QuotaSvc["IFreemiumQuotaService"]
+    QuotaSvc -->|"SELECT ... FOR UPDATE on centers"| Postgres[("PostgreSQL 16 (Centers + Escandallos + Webhook Log)")]
+    UI -->|"Checkout Pro"| CheckoutSvc["CreateStripeCheckoutSessionAsync (Valida TenantGuard + Inyecta metadata.center_id)"]
+
+    Stripe["ACT-STRIPE-001 (Stripe Dispatcher)"] -->|"POST /api/v1/billing/webhooks/stripe (Raw <= 64KB)"| WebhookEp["StripeWebhookHandler (Stripe.net MIT)"]
+    WebhookEp -->|"1. Verifica HMAC-SHA256 sobre Raw Stream (<= 300s)"| SigCheck["EventUtility.ConstructEvent"]
+    SigCheck -->|"2. INSERT event_id PK + Transición Monótona"| Postgres
+    SigCheck -->|"Firma Inválida / Replay"| Obs["CMP-OBS-TELEMETRY-001 (Alerta SECURITY + 400)"]
 ```
 
-## 3. Interface Contracts and Execution Policies
+## 3. Contratos de Interfaz y Políticas de Ejecución
 
-- **Execution Mechanism**: Servicio transaccional en proceso y receptor de webhooks dedicado con parseo de cuerpo crudo (`rawBody`) para verificación HMAC-SHA256.
-- **Fault Tolerance and Performance**: Idempotencia garantizada mediante restricción `PRIMARY KEY (event_id)` en `stripe_webhook_events`; rechazo inmediato (`HTTP 400`) ante firmas ausentes, inválidas o con timestamp expirado ($>300\text{ s}$).
+- **Control Atómico de Cuota Freemium Anti-TOCTOU Multi-Circuito (`ADR-003-MULTITENANT-RLS-AND-ATOMIC-QUOTA`, `SEC-REQ-BILLING-001`)**:
+  - Antes de insertar un nuevo escandallo `active`, duplicar mediante `M4` o cambiar un escandallo de `archived` a `active` (`M1`) desde Blazor Web App o API, `IFreemiumQuotaService` abre una transacción en PostgreSQL 16 y adquiere un bloqueo pesimista exclusivo sobre la fila del centro:
+    `SELECT subscription_tier FROM centers WHERE id = @centerId FOR UPDATE;`
+  - Acto seguido, cuenta los escandallos activos: `SELECT COUNT(*) FROM escandallos WHERE center_id = @centerId AND status = 'active';`.
+  - Si `subscription_tier == 'Free'` y `active_count >= 2`, aborta la transacción, emite un evento de auditoría `SECURITY` ante intentos concurrentes de desbordamiento de cuota y devuelve `QuotaExceededResult` (`402 Payment Required`), impidiendo que ráfagas entre pestañas/circuitos burlen el paywall (`ABUSE-QUOTA-BYPASS-001`).
+- **Vinculación en Servidor de `metadata.center_id` en Checkout (`SEC-REQ-BILLING-001`)**:
+  - Antes de invocar `CreateStripeCheckoutSessionAsync`, el servicio verifica mediante `ITenantIsolationGuard` que el usuario autenticado en servidor es titular del `centerId` y asigna de forma inmutable en servidor `SessionCreateOptions.Metadata["center_id"] = centerId.ToString()`, ignorando cualquier metadato enviado por el cliente.
+- **Verificación Criptográfica sobre Cuerpo Crudo (`<= 64 KB`) e Idempotencia Monótona (`SEC-REQ-BILLING-001`)**:
+  - El endpoint `/api/v1/billing/webhooks/stripe` limita el cuerpo crudo a $\le 64\text{ KB}$ (`MaxRequestBodySize = 65_536`) y lee directamente el stream sin mutación previa para invocar `Stripe.EventUtility.ConstructEvent(rawJson, signatureHeader, webhookSecret, tolerance: 300)` (`Stripe.net` `MIT`), rechazando con `400 Bad Request` y alerta `SECURITY` cualquier firma `HMAC-SHA256` inválida, cabecera ausente, payload alterado o timestamp con antigüedad $> 300\text{ segundos}$ (*anti-replay*).
+  - Registra cada `event.Id` en `stripe_webhook_events (event_id TEXT PRIMARY KEY, center_id UUID, event_created_at TIMESTAMPTZ, processed_at TIMESTAMPTZ)` dentro de la misma transacción. Si el `event_id` ya fue procesado, devuelve `200 OK` idempotente sin re-ejecutar efectos laterales, y valida el orden temporal de la suscripción (**idempotencia monótona**) para impedir que eventos atrasados (`checkout.session.completed`) sobrescriban una cancelación más reciente (`customer.subscription.deleted`).
 
 ---
 
-## 4. Revision History and Version Control
+## 4. Historial de Revisiones y Control de Versiones
 
-| Version | Date | Author / Agent | Change Description | Change Reference (Change/PR) |
+| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-05 | agent-system-architect | Definición inicial del módulo de facturación Stripe y cuota freemium | ARCH-INIT-001 |
-
-
-## Historial de Revisiones
-
-| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
-| :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-07 | agent-devops | Integración de incremento de entrega chg-001-escandallo-mvp | chg-001-escandallo-mvp |
+| **1.0.0** | 2026-04-12 | `agent-system-architect` | Definición inicial del gestor atómico de cuota Freemium y Stripe HMAC-SHA256 | `chg-001-escandallo-mvp` |
+| **1.1.0** | 2026-10-08 | `agent-system-architect` | Incorporación de vinculación en servidor de `metadata.center_id`, cota `<= 64 KB` sobre stream crudo e idempotencia monótona (`SEC-REQ-BILLING-001` v1.1.0) | `chg-001-escandallo-mvp` |

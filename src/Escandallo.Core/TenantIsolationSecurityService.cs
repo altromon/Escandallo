@@ -21,13 +21,14 @@ public static class TenantIsolationSecurityService
     }
 
     public static (int Status, string State) EvaluateResourceThrottling(
-        int concurrentExports, int mutationsPerMinute, int recipeLineCount) =>
-        (concurrentExports > 2, mutationsPerMinute > 30, recipeLineCount > 100, concurrentExports == 2) switch
+        int concurrentExports, int mutationsPerMinute, int recipeLineCount, int activeWssCircuits = 1) =>
+        (concurrentExports > 2, mutationsPerMinute > 30, recipeLineCount > 100, activeWssCircuits > 5, concurrentExports == 2) switch
         {
-            (true, _, _, _) => (429, "CONCURRENCIA_EXPORTACION_EXCEDIDA"),
-            (_, true, _, _) => (429, "TASA_MUTACIONES_CASCADA_EXCEDIDA"),
-            (_, _, true, _) => (422, "CARDINALIDAD_RECETA_EXCEDIDA"),
-            (_, _, _, true) => (200, "EN_LIMITE_EXACTO_PERMITIDO"),
+            (true, _, _, _, _) => (429, "CONCURRENCIA_EXPORTACION_EXCEDIDA"),
+            (_, true, _, _, _) => (429, "TASA_MUTACIONES_CASCADA_EXCEDIDA"),
+            (_, _, true, _, _) => (422, "CARDINALIDAD_RECETA_EXCEDIDA"),
+            (_, _, _, true, _) => (429, "LIMITE_CIRCUITOS_WSS_BLAZOR_EXCEDIDO"),
+            (_, _, _, _, true) => (200, "EN_LIMITE_EXACTO_PERMITIDO"),
             _ => (200, "DENTRO_DE_UMBRAL")
         };
 }

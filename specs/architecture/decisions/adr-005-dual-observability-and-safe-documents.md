@@ -1,14 +1,13 @@
 ---
 id: ADR-005-DUAL-OBSERVABILITY-AND-SAFE-DOCUMENTS
 type: architecture-decision-record
-title: Observabilidad Dual Ligera (Serilog + OpenTelemetry .NET) con Nivel en Caliente y Motor Documental Seguro (ClosedXML / PDFsharp)
+title: "Observabilidad Dual en Caliente con Redacción Inmutable (Serilog + OpenTelemetry) y Motor Documental 100% MIT (ClosedXML + PDFsharp)"
 status: proposed
-version: 1.1.0
-schema-version: '1.0'
+version: "1.1.0"
+schema-version: "1.0"
 deciders:
-  - agent-system-architect
-  - agent-threat-modeler
-decision-date: '2026-10-06'
+  - "agent-system-architect"
+decision-date: "2026-10-08"
 affects-components:
   - CMP-DOC-IO-001
   - CMP-OBS-TELEMETRY-001
@@ -16,54 +15,50 @@ supersedes: null
 superseded-by: null
 ---
 
+# ADR-005: Observabilidad Dual en Caliente con Redacción Inmutable (Serilog + OpenTelemetry) y Motor Documental 100% MIT (ClosedXML + PDFsharp)
 
-# ADR-005: Observabilidad Dual Ligera (Serilog + OpenTelemetry .NET) con Nivel en Caliente y Motor Documental Seguro (ClosedXML / PDFsharp)
+## 1. Contexto y Planteamiento del Problema
 
-## 1. Context and Problem Statement
+El sistema debe resolver dos retos críticos de arquitectura y cumplimiento normativo:
+1. **Generación e Importación Segura de Documentos (`.xlsx` y `.pdf`) bajo `license-policy.yaml`**: En el ecosistema .NET, numerosas librerías populares de PDF y Excel (como *iText 7/8* bajo `AGPL-3.0`, *EPPlus v5+* bajo *Polyform Noncommercial*, o *QuestPDF* bajo licencia dual con límites comerciales) infringen la política corporativa de licencias (`DENY` para AGPL/GPL y rechazo de licencias comerciales propietarias no autorizadas). Además, la lectura de `.xlsx` está expuesta a Zip Bombs con cabeceras ZIP falsificadas (`ZipArchiveEntry.Length` spoofing), XXE y Formula Injection con espacios iniciales (`SEC-REQ-XLSX-001`), y la exportación concurrente puede fragmentar el *Large Object Heap (LOH)* (`SEC-REQ-DOS-001`).
+2. **Observabilidad Dual en Caliente sin Fuga de PII ni Evicción de Alertas (`FR-OBS-001`, `SEC-REQ-OBS-001`)**: El administrador (`ACT-MAINTAINER-001`) necesita cambiar el nivel de log en tiempo de ejecución (`DEBUG`..`SECURITY`) sin reiniciar el servidor, garantizando que ni siquiera en modo `DEBUG` se filtren contraseñas en `Exception.Message`, tokens, firmas de Stripe ni datos personales, ni que una ráfaga de logs `INFO`/`DEBUG` sobrescriba las trazas `SECURITY` (`ABUSE-PRIV-OBS-001`).
 
-Dos requisitos técnicos clave impactan directamente en el consumo de memoria del servidor `.NET` y en la superficie de seguridad:
-1. **Observabilidad Dual y Nivel en Caliente (`FR-OBS-001`, `SEC-REQ-OBS-001`)**: El usuario mantenedor (`ACT-MAINTAINER-001`) debe poder extraer logs, trazas y métricas tanto desde una consola web integrada (`JSON`, `CSV`, `OTLP`) como hacia un stack externo, cambiando en caliente la severidad (`DEBUG`, `INFO`, `WARN`, `ERROR`, `SECURITY`) sin reiniciar el proceso ASP.NET Core y sin exponer jamás credenciales o PII en modo `DEBUG`.
-2. **Importación/Exportación Documental (`FR-REPORT-001`, `SEC-REQ-XLSX-001`, `SEC-REQ-DOS-001`)**: El sistema importa catálogos desde plantillas `.xlsx` (`M4`) y exporta informes ejecutivos exclusivamente en `.pdf` y `.xlsx`, debiendo resistir ataques XXE, Bombas ZIP, inyección de fórmulas DDE y agotamiento de RAM por concurrencia.
+## 2. Opciones Tecnológicas Consideradas
 
-## 2. Considered Technology Options
+1. **Opción A (Recomendada — `ClosedXML` (`MIT`) + `PDFsharp` (`MIT`) + `Microsoft.IO.RecyclableMemoryStream` (`MIT`) con `BoundedReadStream` + `Serilog` (`Apache-2.0`) + `OpenTelemetry .NET` (`Apache-2.0`) con `LoggingLevelSwitch`, `PiiAndSecretRedactingPolicy` y Canal `SECURITY` Aislado)**:
+   - Todas las librerías ostentan licencias `MIT` o `Apache-2.0` (`ALLOW` en `license-policy.yaml`).
+2. **Opción B (`EPPlus` / `QuestPDF` / `iText` + Logging Estático con Reinicio)**:
+   - Introduce bloqueos de auditoría de licencias (`agent-compliance-checker`) y obliga a reiniciar contenedores para diagnosticar incidencias en producción.
 
-1. **Opción A (Elegida): Telemetría con `Serilog` (`LoggingLevelSwitch`) + `OpenTelemetry .NET` sobre Partición Circular en PostgreSQL + Exportadores OTLP, y Motor Documental Nativo en .NET (`PDFsharp` + `ClosedXML`)**:
-   - **Telemetría Dual Sin Sobrecoste RAM**: En lugar de desplegar Elasticsearch/Logstash/Kibana (que consumiría $>6\text{ GB RAM}$), `CMP-OBS-TELEMETRY-001` utiliza `Serilog` (`Apache-2.0`) con un `IDestructuringPolicy` de redactado automático en origen (`[REDACTED]`) y `LoggingLevelSwitch` para conmutación atómica de nivel en caliente en $< 5\text{ ms}`. Escribe asíncronamente en una tabla particionada/rotativa (`telemetry_events`, retención configurable 30 días) para alimentar al instante la consola web del mantenedor (`JSON`/`CSV`/`OTLP`), a la vez que emite por protocolo estándar OTLP/HTTP (`OpenTelemetry.Exporter.OpenTelemetryProtocol`) hacia colectores externos.
-   - **Motor Documental Nativo (`PDFsharp` + `ClosedXML`)**: Genera PDFs vectoriales con `PDFsharp` (`MIT`) y hojas Excel con `ClosedXML` (`MIT`) sobre flujos acotados, aplicando un `SemaphoreSlim` por centro de máximo 2 exportaciones concurrentes.
-2. **Opción B: Stack ELK Autohospedado + Renderizado PDF con Headless Chromium (`Playwright` / `PuppeteerSharp`) o Librerías Copyleft (`iText7` AGPL)**:
-   - **Contras**: Un solo proceso de Chromium consume 300–600 MB de RAM por PDF generado, `iText7` viola `license-policy.yaml` (`AGPL-3.0`), y ELK requiere un servidor dedicado de alto coste, destruyendo la rentabilidad de `ADR-001`.
+## 3. Decisión Adoptada
 
-## 3. Decision Outcome
+Se elige la **Opción A (`ClosedXML` MIT + `PDFsharp` MIT + `RecyclableMemoryStream` MIT + `Serilog` Apache-2.0 + `OpenTelemetry .NET` Apache-2.0)**.
 
-Se elige la **Opción A (Telemetría Dual Ligera en .NET con Redactado en Origen + Generación Documental Nativa con `PDFsharp`/`ClosedXML` y Pre-Inspección Anti-XXE/ZipBomb)**.
+**Justificación técnica y de cumplimiento (`SEC-REQ-XLSX-001`, `SEC-REQ-DOS-001`, `SEC-REQ-OBS-001`)**:
+- **100% Conformidad SPDX (`license-policy.yaml`)**:
+  - `ClosedXML` (`MIT`), `DocumentFormat.OpenXml` (`MIT`) y `Microsoft.IO.RecyclableMemoryStream` (`MIT`) para lectura/escritura segura de `.xlsx` sin fragmentar el LOH.
+  - `PDFsharp` (`MIT`) para generación de dosieres ejecutivos `.pdf`.
+  - `Serilog` (`Apache-2.0`) y `OpenTelemetry .NET` (`Apache-2.0`) para telemetría dual.
+- **Blindaje Anti-Zip-Bomb (`BoundedReadStream`), Anti-XXE, Anti-DDE y LOH en `CMP-DOC-IO-001`**:
+  - Antes de entregar el stream a `ClosedXML`, se valida tamaño comprimido $\le 2\text{ MB}$ (`0x504B0304`), $\le 64$ entradas ZIP, ratio declarado $\le 20:1$ y se descomprime a través de un `BoundedReadStream` sobre `RecyclableMemoryStream` que cuenta los bytes reales descomprimidos y aborta con `422 Unprocessable Entity` si superan `10 MB` (inmune a cabeceras ZIP falsificadas), aplicando `XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }` y cota de `5.000` filas.
+  - Cualquier celda de texto cuyo valor tras `TrimStart()` comience por `=`, `+`, `-`, `@`, `\t` o `\r` se escapa con apóstrofo (`'`) y se asigna explícitamente como `XLDataType.Text`. Las exportaciones se limitan con `SemaphoreSlim(2, 2)`, `10 exportaciones/minuto` por centro y timeout de `10 s`.
+- **Redacción Inmutable, Cota de Destructuración y Canal `SECURITY` en `CMP-OBS-TELEMETRY-001`**:
+  - `Serilog.Core.LoggingLevelSwitch` conmuta niveles en `< 1000 ms`, limitando la destructuración con `Destructuring.ToMaximumDepth(3)` y `ToMaximumStringLength(1024)`.
+  - `PiiAndSecretRedactingPolicy` reemplaza secretos y PII por `[REDACTED]` tanto en propiedades estructuradas como en cadenas de conexión `Npgsql` (`Password=...`) y claves `whsec_` dentro de `Exception.Message`, serializando en JSON de una sola línea (escapando `\r`, `\n`, `\t`) y aislando los eventos `SECURITY` en un canal inmutable protegido contra evicción.
 
-### Controles de Seguridad Integrados
+## 4. Consecuencias
 
-1. **Pre-Inspección de Archivos `.xlsx` (`CMP-DOC-IO-001` — `SEC-REQ-XLSX-001`)**:
-   - Antes de abrir el flujo con `ClosedXML`, un validador basado en `System.IO.Compression.ZipArchive` y `XmlReader` (`DtdProcessing = DtdProcessing.Prohibit`, `XmlResolver = null`) inspecciona el directorio central del archivo (máx. `2 MB` comprimido): si la suma de `entry.Length` descomprimidos supera `10 MB` o el ratio de compresión supera `20:1`, o si algún flujo XML contiene declaraciones `<!DOCTYPE` / `<!ENTITY`, la petición se aborta inmediatamente con `HTTP 422` y alerta `SECURITY`.
-   - Toda celda de texto en importación o exportación que comience por `=`, `+`, `-`, `@`, `\t` o `\r` es neutralizada anteponiendo `'` y forzando `XLDataType.Text`.
-2. **Inmutabilidad de Redactado en `DEBUG` (`CMP-OBS-TELEMETRY-001` — `SEC-REQ-OBS-001`)**:
-   - El pipeline de `Serilog` aplica un `SecretRedactingDestructuringPolicy` y `LogEventEnricher` que enmascara con `[REDACTED]` las claves `Authorization`, `Cookie`, `password`, `token`, `secret`, `Stripe-Signature` e `iban` como una capa inmutable independiente del valor actual de `LoggingLevelSwitch`.
-
-## 4. Consequences
-
-- **Positive**:
-  - Permite ejecutar toda la suite de observabilidad y generación de informes PDF/Excel en `.NET` puro dentro de la huella de `< 512 MB RAM` por proceso definida en las restricciones de arquitectura, con licencias 100% `MIT`/`Apache-2.0`.
-- **Negative / Trade-offs**:
-  - El diseño visual del informe PDF se maqueta programáticamente mediante primitivas de tablas y gráficos vectoriales en `PDFsharp` en lugar de imprimir HTML/CSS con un navegador headless.
+- **Positivas**:
+  - Aprobación garantizada en el gate de licencias (`verify_licenses`) y en la auditoría de seguridad (`verify_security`).
+  - Huella de memoria predecible sin fragmentación de LOH gracias a `SemaphoreSlim(2, 2)` y `RecyclableMemoryStream`.
+- **Negativas / Compensaciones (Trade-offs)**:
+  - `PDFsharp` requiere maquetación programática mediante coordenadas/tablas MigraDoc (`MIT`), lo cual se encapsula limpiamente en `IExecutiveReportExporter`.
 
 ---
 
-## 5. Revision History and Version Control
+## 5. Historial de Revisiones y Control de Versiones
 
-| Version | Date | Deciders | Decision Status | Reference (Change/PR) |
+| Versión | Fecha | Decisores | Estado de la Decisión | Referencia (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-05 | agent-system-architect | Formal decision proposal | ARCH-INIT-001 |
-| **1.1.0** | 2026-10-06 | Product Owner, agent-system-architect | Migración a Serilog, OpenTelemetry .NET, ClosedXML y PDFsharp | ARCH-DOTNET-002 |
-
-
-## Historial de Revisiones
-
-| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
-| :--- | :--- | :--- | :--- | :--- |
-| **1.1.0** | 2026-10-07 | agent-devops | Integración de incremento de entrega chg-001-escandallo-mvp | chg-001-escandallo-mvp |
+| **1.0.0** | 2026-04-12 | `agent-system-architect` | Propuesta formal aceptada | `chg-001-escandallo-mvp` |
+| **1.1.0** | 2026-10-08 | `agent-system-architect` | Incorporación de `BoundedReadStream`, `RecyclableMemoryStream`, `XLDataType.Text`, `ToMaximumDepth(3)`, redacción en `Exception.Message` y canal `SECURITY` anti-evicción | `chg-001-escandallo-mvp` |

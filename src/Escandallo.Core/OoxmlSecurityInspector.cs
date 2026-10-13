@@ -30,8 +30,9 @@ public static class OoxmlSecurityInspector
         }
     }
 
-    public static string EscapeSpreadsheetFormula(string rawCellText) =>
-        (!string.IsNullOrEmpty(rawCellText) && FormulaTriggers.Contains(rawCellText[0]))
-            ? $"'{rawCellText}"
-            : rawCellText;
+    public static string EscapeSpreadsheetFormula(string rawCellText)
+    {
+        string trimmed = (rawCellText ?? string.Empty).TrimStart();
+        return (trimmed.Length > 0 && FormulaTriggers.Contains(trimmed[0])) ? $"'{trimmed}" : rawCellText ?? string.Empty;
+    }
 }

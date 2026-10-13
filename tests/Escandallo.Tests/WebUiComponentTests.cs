@@ -106,10 +106,61 @@ public sealed class WebUiComponentTests
         Assert.Equal(expectedModalDomState, actualModalState);
     }
 
+    /// <summary>
+    /// Verificación de fronteras de contraste, área táctil y rechazo de textos con enumerados o códigos internos (QR-UI-A11Y-001).
+    /// </summary>
+    [Theory]
+    [InlineData(4.5, 44, "Rentabilidad óptima: alcanzas tu margen objetivo", "APROBADO")]
+    [InlineData(7.1, 48, "Este cambio actualizará automáticamente 2 servicios activos", "APROBADO")]
+    [InlineData(4.4, 44, "Rentabilidad óptima: alcanzas tu margen objetivo", "RECHAZADO_CONTRASTE_INSUFICIENTE")]
+    [InlineData(5.0, 43, "Guardar servicio y calcular precio recomendado", "RECHAZADO_AREA_TACTIL_INSUFICIENTE")]
+    [InlineData(7.1, 48, "Estado del servicio: OPTIMO (FR-CALC-001 / M2)", "RECHAZADO_FUGA_NOMENCLATURA_INTERNA")]
+    [InlineData(7.1, 48, "Suscripción: CANCELED - Pase ítems a estado ARCHIVED (M1)", "RECHAZADO_FUGA_ENUMERADO_EN_INTERFAZ")]
+    [Trait("Requirement", "QR-UI-A11Y-001")]
+    public void ValidateUiControlAccessibilityAndLanguage_BoundaryAndForbiddenTokens_ReturnsExpectedDictamen(
+        double contrast,
+        int sidePx,
+        string visibleText,
+        string expectedDictamen)
+    {
+        string actualDictamen = Escandallo.Core.WebUiComponentService.ValidateUiControlAccessibilityAndLanguage(contrast, sidePx, visibleText);
+        Assert.Equal(expectedDictamen, actualDictamen);
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-CALC-001")]
+    [Trait("Requirement", "FR-HIST-001")]
+    [Trait("Requirement", "FR-REPORT-001")]
+    [Trait("Requirement", "QR-UI-A11Y-001")]
+    public void RenderEscandalloBuilderView_ActiveServicesOnlyCollapsedByDefault_AndArchivedServicesInHistoryDescending()
+    {
+        using var ctx = new Bunit.TestContext();
+        string markup = ctx.RenderComponent<Escandallo.Core.Components.EscandalloBuilderPage>().Markup;
+        Assert.Contains("id=\"escandallosSection\"", markup);
+        Assert.Contains("point-1-full-width", markup);
+        Assert.Contains("1. Calculadora de servicios y semáforo de rentabilidad", markup);
+        Assert.Contains("<details", markup);
+        Assert.Contains("aria-expanded=\"false\"", markup);
+        Assert.Contains("service-collapsed-row", markup);
+        Assert.Contains("desktop-tablet-only", markup);
+        Assert.Contains("Coste total:", markup);
+        Assert.Contains("Precio de venta:", markup);
+        Assert.Contains("Descargar PDF de todos los servicios", markup);
+        Assert.Contains("Descargar XLSX de todos los servicios", markup);
+        Assert.Contains("4. Histórico de servicios archivados y actualizaciones de precios", markup);
+        Assert.Contains("archivedServicesList", markup);
+        Assert.True(markup.IndexOf("2026-10-09T10:30:00Z", System.StringComparison.Ordinal) < markup.IndexOf("2026-10-08T09:00:00Z", System.StringComparison.Ordinal));
+    }
+
     private static string InvokeUnimplementedResponsiveLayoutRender(string deviceAndOrientation, int widthPx, int heightPx) {
         using var ctx = new Bunit.TestContext();
         var cut = ctx.RenderComponent<Escandallo.Core.Components.MainResponsiveLayout>(p => p.Add(c => c.ViewportMode, deviceAndOrientation));
         Assert.Contains("escandallo-app-shell", cut.Markup);
+        Assert.Contains("point-1-full-width", cut.Markup);
+        Assert.Contains("Impuestos y equivalencias", cut.Markup);
+        Assert.True(cut.Markup.IndexOf("Calculadora de servicios", System.StringComparison.Ordinal) < cut.Markup.IndexOf("Catálogo de costes", System.StringComparison.Ordinal));
+        Assert.Contains("Cerrar sesión", cut.Markup);
+        Assert.DoesNotContain("FR-", cut.Markup);
         return Escandallo.Core.WebUiComponentService.RenderResponsiveAppShell(deviceAndOrientation, widthPx, heightPx);
     }
 
@@ -117,13 +168,24 @@ public sealed class WebUiComponentTests
         using var ctx = new Bunit.TestContext();
         var cut = ctx.RenderComponent<Escandallo.Core.Components.CostCatalogPage>(p => p.Add(c => c.ActiveCategoryTab, categoryTab));
         Assert.Contains("role=\"tablist\"", cut.Markup);
+        Assert.DoesNotContain("(M4)", cut.Markup);
+        Assert.DoesNotContain("(M5)", cut.Markup);
         return Escandallo.Core.WebUiComponentService.RenderCostCatalogView(categoryTab, assistantAction, wastePct);
     }
 
     private static string InvokeUnimplementedEscandalloBuilderRender(int recipeLinesCount, decimal commercialPvp, decimal recommendedPvp) {
         using var ctx = new Bunit.TestContext();
         var cut = ctx.RenderComponent<Escandallo.Core.Components.EscandalloBuilderPage>(p => p.Add(c => c.RecipeLinesCount, recipeLinesCount).Add(c => c.CommercialPvp, commercialPvp).Add(c => c.RecommendedPvp, recommendedPvp));
+        Assert.Contains("id=\"escandallosSection\"", cut.Markup);
+        Assert.Contains("point-1-full-width", cut.Markup);
+        Assert.Contains("1. Calculadora de servicios y semáforo de rentabilidad", cut.Markup);
+        Assert.Contains("<details", cut.Markup);
+        Assert.Contains("aria-expanded=\"false\"", cut.Markup);
+        Assert.Contains("service-collapsed-row", cut.Markup);
+        Assert.Contains("Descargar PDF de todos los servicios", cut.Markup);
         Assert.Contains("aria-live=\"polite\"", cut.Markup);
+        Assert.DoesNotContain("OPTIMO", cut.Markup);
+        Assert.DoesNotContain("(M1)", cut.Markup);
         return Escandallo.Core.WebUiComponentService.RenderEscandalloBuilderView(recipeLinesCount, commercialPvp, recommendedPvp);
     }
 
@@ -131,6 +193,7 @@ public sealed class WebUiComponentTests
         using var ctx = new Bunit.TestContext();
         var cut = modalIdentifier == "CASCADE_IMPACT_M3" ? ctx.RenderComponent<Escandallo.Core.Components.CascadeImpactModal>(p => p.Add(c => c.AffectedCount, activeCount)).Markup : ctx.RenderComponent<Escandallo.Core.Components.FreemiumPaywallModal>(p => p.Add(c => c.ActiveEscandallosCount, activeCount).Add(c => c.SubscriptionState, subscriptionState)).Markup;
         Assert.Contains("role=\"dialog\"", cut);
+        Assert.DoesNotContain("(M1)", cut);
         return Escandallo.Core.WebUiComponentService.RenderInteractiveModal(modalIdentifier, activeCount, subscriptionState);
     }
 }

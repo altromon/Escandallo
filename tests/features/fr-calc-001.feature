@@ -2,14 +2,14 @@
 # AUTO-GENERADO POR AI-SDLC (Cucumber Integration)
 # Origen: specs/product/requirements/fr-calc-001.md
 # ID Requerimiento: FR-CALC-001
-# Versión: 1.0.0
+# Versión: 1.4.0
 # NO EDITAR MANUALMENTE: Cualquier cambio debe realizarse en el Markdown origen.
 # ==============================================================================
 
 @FR-CALC-001 @automated @regression
 Feature: Cálculo de Escandallo Total, Beneficio y PVP de Servicios Estéticos
 
-  Scenario: Cálculo completo del desglose de un servicio estético con productos, personal y gastos generales
+  Scenario: Cálculo completo del desglose de un servicio estético activo mostrado colapsado en una línea al 100% del ancho de pantalla en la calculadora principal
     Given un centro de estética tiene una tasa de gastos generales de 0.08285985 EUR/min
     And existe la categoría "Tecnico" con precio unitario 0.1875 EUR/min
     And existen los productos "Cleasing Milk" a 0.06902 EUR/ml y "Colagen Mask" a 7.21 EUR/ud con merma 0%
@@ -22,6 +22,7 @@ Feature: Cálculo de Escandallo Total, Beneficio y PVP de Servicios Estéticos
     And el Beneficio Neto unitario es 12.0608955 EUR
     And el Precio con Beneficio sin IVA es 36.1826865 EUR
     And el PVP final con IVA es 43.78105067 EUR
+    And el servicio activo aparece en la sección "1. Calculadora de servicios y semáforo de rentabilidad" al 100% del ancho de la pantalla colapsado por defecto en una sola línea mostrando su resumen ejecutivo y ocultando sus productos hasta su despliegue
 
   Scenario Outline: Evaluación de Beneficio Real y Semáforo de Erosión de Margen frente al PVP Comercial Fijado
     Given un servicio tiene un Escandallo Total calculado de <escandallo_total> EUR, un Beneficio objetivo de <beneficio_obj> y un IVA de <iva_pct>
@@ -37,14 +38,14 @@ Feature: Cálculo de Escandallo Total, Beneficio y PVP de Servicios Estéticos
       | 32.00            | 0.50          | 0.21    | 36.30         | 30.00          | -2.00          | CRITICO  |
 
   Scenario Outline: Rechazo de cálculo de escandallo ante parámetros fuera de rango o dosis inválidas
-    Given un usuario configura un servicio estético en el constructor dinámico
-    When envía una duración de <duracion_min> minutos, dosis de producto <dosis>, margen <margen> e IVA <iva>
-    Then el motor de cálculo rechaza la solicitud con código HTTP <codigo_error> y error "<codigo_validacion>"
+    Given un centro de estética intenta calcular un servicio con duración <duracion_min> minutos, dosis de producto <dosis> ml, margen <margen> e IVA <iva>
+    When el servidor valida las reglas aritméticas del motor de escandallos
+    Then el servidor rechaza el cálculo con error de validación "<codigo_error>" y código HTTP 422
 
     Examples:
-      | duracion_min | dosis | margen | iva   | codigo_error | codigo_validacion             |
-      | 0            | 10.0  | 0.50   | 0.21  | 422          | DURACION_SERVICIO_INVALIDA    |
-      | -30          | 10.0  | 0.50   | 0.21  | 422          | DURACION_SERVICIO_INVALIDA    |
-      | 60           | -5.0  | 0.50   | 0.21  | 422          | DOSIS_PRODUCTO_NEGATIVA       |
-      | 60           | 10.0  | -1.20  | 0.21  | 422          | MARGEN_BENEFICIO_FUERA_RANGO  |
-      | 60           | 10.0  | 0.50   | -0.10 | 422          | IVA_NEGATIVO_INVALIDO         |
+      | duracion_min | dosis | margen | iva   | codigo_error                    |
+      | 0            | 10.0  | 0.50   | 0.21  | DURACION_SERVICIO_INVALIDA      |
+      | -30          | 10.0  | 0.50   | 0.21  | DURACION_SERVICIO_INVALIDA      |
+      | 60           | -5.0  | 0.50   | 0.21  | DOSIS_PRODUCTO_NEGATIVA         |
+      | 60           | 10.0  | -1.20  | 0.21  | MARGEN_BENEFICIO_FUERA_DE_RANGO |
+      | 60           | 10.0  | 0.50   | -0.10 | IVA_FUERA_DE_RANGO              |

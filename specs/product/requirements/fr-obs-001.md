@@ -1,23 +1,22 @@
 ---
 id: FR-OBS-001
 type: requirement
-title: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor
-status: active
-version: 1.0.0
-schema-version: '1.0'
+title: "Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor"
+status: draft
+version: "1.0.0"
+schema-version: "1.0"
 category: functional
 derives-from:
   - UC-OBSERVABILITY-001
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - '@FR-OBS-001'
-  - '@automated'
-  - '@regression'
+  - "@FR-OBS-001"
+  - "@automated"
+  - "@regression"
 supersedes: null
 superseded-by: null
 ---
-
 
 # Requirement: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mantenedor
 
@@ -53,15 +52,15 @@ Feature: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mante
 
   Scenario Outline: Rechazo controlado de niveles de severidad inexistentes o formatos de exportación de telemetría inválidos
     Given el usuario "ops@escandallo.es" está autenticado con el rol "ACT-MAINTAINER-001"
-    When solicita configurar el nivel "<nivel_log>" y exportar telemetría en el formato "<formato_exportacion>"
-    Then el servidor responde con código HTTP <codigo_http> y estado "<estado_operacion>"
+    When solicita configurar el nivel de log "<nivel_solicitado>" o exportar telemetría en formato "<formato_exportacion>"
+    Then el servidor responde con código HTTP <codigo_http> y estado de validación "<estado_validacion>"
 
     Examples:
-      | nivel_log | formato_exportacion | codigo_http | estado_operacion                  |
-      | DEBUG     | JSON                | 200         | EXPORTACION_TELEMETRIA_OK         |
-      | SECURITY  | OTLP                | 200         | EXPORTACION_TELEMETRIA_OK         |
-      | VERBOSE99 | JSON                | 400         | NIVEL_GRANULARIDAD_NO_SOPORTADO   |
-      | INFO      | EXE                 | 400         | FORMATO_TELEMETRIA_NO_SOPORTADO   |
+      | nivel_solicitado | formato_exportacion | codigo_http | estado_validacion          |
+      | DEBUG            | JSON                | 200         | APLICADO_Y_EXPORTADO       |
+      | SECURITY         | OTLP                | 200         | APLICADO_Y_EXPORTADO       |
+      | VERBOSE99        | JSON                | 400         | NIVEL_GRANULARIDAD_INVALIDO|
+      | INFO             | EXE                 | 400         | FORMATO_TELEMETRIA_INVALIDO|
 ```
 
 ## 3. Revision History
@@ -70,10 +69,3 @@ Feature: Extracción de Logs, Trazas y Métricas del Servidor para Usuario Mante
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-04 | agent-product-analyst | Definición inicial del requisito de extracción de logs, trazas y métricas. |
 | 1.1.0 | 2026-10-05 | agent-expert-user | Logs estructurados en formato estándar con granularidad configurable y soporte dual (descarga web + stack externo). |
-
-
-## Historial de Revisiones
-
-| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
-| :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

@@ -30,14 +30,14 @@ Feature: Alta y Cálculo Unitario de Productos, Personal, Gastos Generales y Par
       | Doctor           | personal | 10560    | minutos/mes | 3000.00 | 0.25      | 1.5          | 5625.00       | 0.53267045      | min            |
 
   Scenario Outline: Rechazo controlado de costes con valores fuera de dominio, negativos o divisores cero
-    Given un centro de estética activo intenta registrar o actualizar un coste de tipo "<tipo>"
-    When introduce cantidad <cantidad_inv>, importe <importe_inv> y porcentaje de merma <merma_inv>
-    Then el servidor rechaza la operación con código HTTP <codigo_error> y mensaje de validación "<motivo_rechazo>"
+    Given un centro de estética activo intenta registrar un coste de tipo "<tipo>"
+    When envía una cantidad <cantidad>, importe base <importe> y porcentaje de merma <merma_pct>
+    Then el servidor rechaza el registro con código HTTP 422 y motivo "<error_validacion>"
 
     Examples:
-      | tipo     | cantidad_inv | importe_inv | merma_inv | codigo_error | motivo_rechazo                  |
-      | producto | 0            | 34.51       | 0.05      | 422          | CANTIDAD_DIVISOR_CERO           |
-      | producto | -100         | 34.51       | 0.05      | 422          | CANTIDAD_NEGATIVA_INVALIDA      |
-      | producto | 500          | -15.00      | 0.05      | 422          | IMPORTE_NEGATIVO_INVALIDO       |
-      | producto | 250          | 50.00       | 1.05      | 422          | MERMA_FUERA_DE_RANGO_0_A_99_PCT |
-      | personal | 0            | 1100.00     | 0.00      | 422          | MINUTOS_MENSUALES_DIVISOR_CERO  |
+      | tipo          | cantidad | importe | merma_pct | error_validacion                |
+      | producto      | 0        | 34.51   | 0         | CANTIDAD_DIVISOR_CERO           |
+      | producto      | -100     | 34.51   | 0         | CANTIDAD_NEGATIVA_INVALIDA      |
+      | producto      | 500      | -10.00  | 0         | IMPORTE_NEGATIVO_INVALIDO       |
+      | producto      | 500      | 34.51   | 100       | MERMA_FUERA_DE_RANGO_0_A_99_PCT |
+      | gasto_general | 0        | 875.00  | 0         | MINUTOS_MENSUALES_DIVISOR_CERO  |

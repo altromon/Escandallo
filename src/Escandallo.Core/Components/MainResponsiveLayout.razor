@@ -4,20 +4,31 @@
 <div class="escandallo-app-shell" role="application" aria-label="Plataforma SaaS de Escandallos para Centros de Estética" data-viewport="@ViewportMode">
     <header class="escandallo-header" role="banner">
         <nav aria-label="Navegación principal y selector de centro">
-            <button type="button" class="touch-target-44" aria-label="Seleccionar Centro Activo">@ActiveCenterName</button>
-            <a href="#tab-catalog" class="touch-target-44">Catálogo de Costes</a>
-            <a href="#tab-builder" class="touch-target-44">Constructor de Escandallos</a>
-            <a href="#tab-reports" class="touch-target-44">Informes Ejecutivos</a>
-            <a href="#tab-observability" class="touch-target-44">Consola Mantenedor</a>
+            <button type="button" class="touch-target-44" aria-label="Seleccionar centro de estética">@ActiveCenterName</button>
+            <a href="#escandallosHeading" class="touch-target-44">Calculadora de servicios</a>
+            <a href="#catalogHeading" class="touch-target-44">Catálogo de costes</a>
+            <a href="#paramsHeading" class="touch-target-44">Impuestos y equivalencias</a>
+            <a href="#historyHeading" class="touch-target-44">Histórico de servicios archivados</a>
+            <a href="#tab-reports" class="touch-target-44">Informes de rentabilidad</a>
+            <a href="#tab-subscription" class="touch-target-44">Mi suscripción</a>
+            <button type="button" class="touch-target-44" aria-label="Cerrar sesión y volver a la pantalla de acceso" @onclick="HandleLogoutAsync">Cerrar sesión</button>
         </nav>
     </header>
-    <main class="escandallo-main-viewport" role="main">
+    <main class="escandallo-main-viewport point-1-full-width" role="main">
         @Body
     </main>
 </div>
 
 @code {
     [Parameter] public string ActiveCenterName { get; set; } = "Estética Lumière Madrid";
-    [Parameter] public string ViewportMode { get; set; } = "SIN_OVERFLOW_HORIZONTAL:TARGET_44PX";
+    [Parameter] public string ViewportMode { get; set; } = "adaptativo-sin-desbordamiento";
+    [Parameter] public bool IsAuthenticated { get; set; } = true;
+    [Parameter] public EventCallback OnLogout { get; set; }
     [Parameter] public RenderFragment? Body { get; set; }
+
+    private Task HandleLogoutAsync()
+    {
+        IsAuthenticated = false;
+        return OnLogout.InvokeAsync();
+    }
 }

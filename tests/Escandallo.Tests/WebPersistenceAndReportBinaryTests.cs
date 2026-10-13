@@ -14,7 +14,16 @@ public class WebPersistenceAndReportBinaryTests
         var restored = VerifySeedRoundtrip();
         var svc = restored.Escandallos[0];
         var calc = MultiTenantSeedCatalog.ComputeService(restored, svc);
-        Assert.StartsWith("%PDF-1.4", Encoding.ASCII.GetString(RealPdfReportGenerator.BuildPdfBytes(restored.CenterName, svc.Name, calc, svc.PvpComercialFijado, restored.Parameters)));
+        var pdfText = Encoding.ASCII.GetString(RealPdfReportGenerator.BuildPdfBytes(restored.CenterName, svc.Name, calc, svc.PvpComercialFijado, restored.Parameters));
+        Assert.StartsWith("%PDF-1.4", pdfText);
+        Assert.Contains("1. RESUMEN EJECUTIVO", pdfText);
+        Assert.Contains("2. DESGLOSE DETALLADO", pdfText);
+        Assert.Contains("Productos con merma", pdfText);
+        Assert.Contains("Personal imputado", pdfText);
+        Assert.Contains("Gastos Generales", pdfText);
+        Assert.Contains("Cleasing Milk", pdfText);
+        Assert.Contains("Colagen Mask", pdfText);
+        Assert.DoesNotContain("| OPTIMO", pdfText);
         using var ms = new MemoryStream(RealXlsxReportGenerator.BuildXlsxBytes(restored.CenterName, svc.Name, calc, svc.PvpComercialFijado, restored.Parameters));
         using var zip = new ZipArchive(ms, ZipArchiveMode.Read);
         using var sr = new StreamReader(zip.GetEntry("xl/worksheets/sheet1.xml")!.Open(), Encoding.UTF8);

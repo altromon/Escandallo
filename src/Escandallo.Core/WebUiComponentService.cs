@@ -20,18 +20,20 @@ public static class WebUiComponentService
         };
 
     public static string RenderEscandalloBuilderView(int recipeLinesCount, decimal commercialPvp, decimal recommendedPvp) =>
-        (commercialPvp >= recommendedPvp, commercialPvp >= 25.00m) switch
-        {
-            (true, _) => "SEMAFORO_VERDE:ARIA_LIVE_MARGEN_OBJETIVO",
-            (false, true) => "SEMAFORO_AMARILLO:ARIA_LIVE_MARGEN_INFERIOR",
-            _ => "SEMAFORO_ROJO:ARIA_LIVE_PERDIDA_NETA"
-        };
+        commercialPvp >= recommendedPvp ? "SEMAFORO_VERDE:ARIA_LIVE_MARGEN_OBJETIVO"
+            : (commercialPvp >= 25.00m ? "SEMAFORO_AMARILLO:ARIA_LIVE_MARGEN_INFERIOR" : "SEMAFORO_ROJO:ARIA_LIVE_PERDIDA_NETA");
 
     public static string RenderInteractiveModal(string modalIdentifier, int activeCount, string subscriptionState) =>
-        modalIdentifier switch
+        modalIdentifier == "CASCADE_IMPACT_M3" ? $"ROLE_DIALOG:IMPACTO_{activeCount}_ESCANDALLOS_ACTIVOS"
+            : (modalIdentifier == "FREEMIUM_PAYWALL_M1" ? "ROLE_DIALOG:BLOQUEO_CUOTA_2_ARCHIVAR_O_STRIPE" : $"ROLE_DIALOG:ARCHIVAR_{activeCount - 2}_PARA_DESBLOQUEAR_EDICION");
+
+    public static string ValidateUiControlAccessibilityAndLanguage(double contrast, int sidePx, string visibleText) =>
+        (contrast < 4.5, sidePx < 44, visibleText.Contains("FR-", StringComparison.Ordinal), visibleText.Contains("CANCELED", StringComparison.Ordinal)) switch
         {
-            "CASCADE_IMPACT_M3" => $"ROLE_DIALOG:IMPACTO_{activeCount}_ESCANDALLOS_ACTIVOS",
-            "FREEMIUM_PAYWALL_M1" => "ROLE_DIALOG:BLOQUEO_CUOTA_2_ARCHIVAR_O_STRIPE",
-            _ => $"ROLE_DIALOG:ARCHIVAR_{activeCount - 2}_PARA_DESBLOQUEAR_EDICION"
+            (true, _, _, _) => "RECHAZADO_CONTRASTE_INSUFICIENTE",
+            (_, true, _, _) => "RECHAZADO_AREA_TACTIL_INSUFICIENTE",
+            (_, _, true, _) => "RECHAZADO_FUGA_NOMENCLATURA_INTERNA",
+            (_, _, _, true) => "RECHAZADO_FUGA_ENUMERADO_EN_INTERFAZ",
+            _ => "APROBADO"
         };
 }

@@ -1,9 +1,9 @@
 # =============================================================================
-# Multi-Stage Dockerfile for Escandallo SaaS (.NET 8.0 Alpine Non-Root)
+# Multi-Stage Dockerfile for Escandallo SaaS (.NET 10.0 Alpine Non-Root)
 # Architecture Reference: ADR-001 (Modular Monolith) & 07-deployment-view.md
 # =============================================================================
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
 COPY Escandallo.sln ./
@@ -17,7 +17,7 @@ COPY tests/ tests/
 RUN dotnet test tests/Escandallo.Tests/Escandallo.Tests.csproj -c Release --no-restore
 RUN dotnet publish src/Escandallo.Web/Escandallo.Web.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

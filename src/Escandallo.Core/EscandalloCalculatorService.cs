@@ -31,8 +31,8 @@ public static class EscandalloCalculatorService
     {
         if (duration <= 0) return (422, "DURACION_SERVICIO_INVALIDA");
         if (dose < 0m) return (422, "DOSIS_PRODUCTO_NEGATIVA");
-        if (margin < 0m || margin > 10m) return (422, "MARGEN_BENEFICIO_FUERA_RANGO");
-        if (vat < 0m) return (422, "IVA_NEGATIVO_INVALIDO");
+        if (margin < 0m || margin > 10m) return (422, "MARGEN_BENEFICIO_FUERA_DE_RANGO");
+        if (vat < 0m || vat > 1m) return (422, "IVA_FUERA_DE_RANGO");
         return (200, $"VALIDO (FR-CALC-001): dur={duration}");
     }
 }

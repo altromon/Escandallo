@@ -29,7 +29,7 @@ As a `ACT-ESTHETIC-USER-001` I want to define beauty services with their duratio
 ## 3. Main Flow
 
 1. El usuario crea, selecciona o **duplica** (Mejora M4) un servicio/tratamiento dentro de su centro de estética.
-2. En el **Constructor Dinámico de Receta** (Mejora M3), el usuario introduce el `Nombre` del servicio, la duración en `Minutos`, la categoría de `Persona` que lo realiza y añade dinámicamente las líneas de productos consumidos (`Producto i`, `Cantidad i` con asistente configurable de conversión de gotas, pulsaciones, cucharaditas y ampollas/viales monodosis, y `% Merma i`, Mejora M5), además de poder fijar su **`PVP Comercial Fijado`** de carta (Mejora M2).
+2. En el **Constructor Dinámico de Receta** (Mejora M3), el usuario introduce el `Nombre` del servicio, la duración en `Minutos`, la categoría de `Persona` que lo realiza y añade dinámicamente las líneas de productos consumidos (`Producto i`, `Cantidad i` con asistente de conversión de gotas/pulsaciones y `% Merma i`, Mejora M5), además de poder fijar su **`PVP Comercial Fijado`** de carta (Mejora M2).
 3. El sistema calcula en servidor:
    - $\text{Gastos Generales Imputados} = \text{Minutos} \times \text{Tasa Total Gastos Generales (€/min)}$
    - $\text{Coste Persona} = \text{Minutos} \times \text{Precio Unitario Personal (€/min)}$

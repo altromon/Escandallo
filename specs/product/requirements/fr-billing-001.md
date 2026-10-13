@@ -1,23 +1,22 @@
 ---
 id: FR-BILLING-001
 type: requirement
-title: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por Centro con Stripe
-status: active
-version: 1.0.0
-schema-version: '1.0'
+title: "Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por Centro con Stripe"
+status: draft
+version: "1.0.0"
+schema-version: "1.0"
 category: functional
 derives-from:
   - UC-SUBSCRIPTION-001
 verifiable-by: cucumber-bdd
 acceptance-format: gherkin
 cucumber-tags:
-  - '@FR-BILLING-001'
-  - '@automated'
-  - '@regression'
+  - "@FR-BILLING-001"
+  - "@automated"
+  - "@regression"
 supersedes: null
 superseded-by: null
 ---
-
 
 # Requirement: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por Centro con Stripe
 
@@ -56,16 +55,16 @@ Feature: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por
 
   @idempotence
   Scenario Outline: Rechazo de contratación o activación ante planes de suscripción inexistentes o importes manipulados
-    Given un propietario autenticado en el centro "Centro Sol" solicita iniciar el pago en Stripe
-    When envía el plan "<plan_solicitado>" con importe declarado "<importe_cliente>"
-    Then el servidor valida la tarifa oficial en backend y responde con "<accion_billing>" y código HTTP <codigo_http>
+    Given un centro de estética solicita iniciar una sesión de suscripción con el plan "<plan_id>" e importe "<importe_eur>" EUR
+    When el servidor valida el catálogo oficial de tarifas de Stripe (14.90 EUR/mes o 149.00 EUR/año)
+    Then la solicitud de suscripción retorna estado "<resultado>" con código HTTP <codigo_http>
 
     Examples:
-      | plan_solicitado  | importe_cliente | accion_billing                            | codigo_http |
-      | PLAN_MENSUAL_EUR | 14.90           | CREAR_SESION_STRIPE_14_90_EUR             | 200         |
-      | PLAN_ANUAL_EUR   | 149.00          | CREAR_SESION_STRIPE_149_00_EUR            | 200         |
-      | PLAN_GRATIS_HACK | 0.00            | RECHAZAR_PLAN_NO_RECONOCIDO               | 400         |
-      | PLAN_MENSUAL_EUR | 0.01            | IGNORAR_IMPORTE_CLIENTE_USAR_TARIFA_14_90 | 200         |
+      | plan_id          | importe_eur | resultado             | codigo_http |
+      | PLAN_MENSUAL_EUR | 14.90       | sesion_creada         | 200         |
+      | PLAN_ANUAL_EUR   | 149.00      | sesion_creada         | 200         |
+      | PLAN_GRATIS_HACK | 0.00        | plan_invalido         | 422         |
+      | PLAN_MENSUAL_EUR | 0.01        | importe_no_autorizado | 422         |
 ```
 
 ## 3. Revision History
@@ -75,10 +74,3 @@ Feature: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por
 | 1.0.0 | 2026-10-04 | agent-product-analyst | Definición inicial del límite freemium de 2 escandallos y suscripción en Stripe. |
 | 1.1.0 | 2026-10-05 | agent-expert-user | Recálculo permitido en versión gratuita y bloqueo de edición/exportación cuando se supera el límite gratuito sin suscripción. |
 | 1.2.0 | 2026-10-05 | agent-product-analyst | Incorporación de tarifas oficiales (14,90 EUR/mes y 149,00 EUR/año) y Mejora M1 (archivado de escandallos sin pérdida de datos). |
-
-
-## Historial de Revisiones
-
-| Versión | Fecha | Autor / Agente | Descripción del Cambio | Referencia de Cambio (Change/PR) |
-| :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-07 | agent-devops | Implementación verificada (TSK-001, TSK-002, TSK-003, TSK-004, TSK-005, TSK-006, TSK-007) | chg-001-escandallo-mvp |

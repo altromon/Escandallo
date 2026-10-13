@@ -11,6 +11,7 @@ public static class LogSecuritySanitizer
         "cookie",
         "stripe-signature",
         "stripe_signature",
+        "credential_hash",
         "password",
         "secret",
         "iban"

@@ -6,7 +6,7 @@ namespace Escandallo.Core;
 
 public static class MultiTenantSeedCatalog
 {
-    public static TenantCatalogDto CreateDefaultCenter(string centerId, string centerName, string ownerId = "owner-001")
+    public static TenantCatalogDto CreateDefaultCenter(string centerId, string centerName, string ownerId = "cliente-a@estetica.es")
         => new(centerId, centerName, ownerId, "FREE", new GlobalParameters(),
             new Dictionary<string, decimal> { ["gota"] = 0.05m, ["pulsacion"] = 2.0m, ["cucharadita"] = 5.0m, ["ampolla_vial"] = 2.0m },
             new List<ProductInput> { new("Cleasing Milk", 200m, 12m, 2m), new("Crema Reafirmante", 200m, 14m, 2m), new("Colagen Mask", 100m, 18m, 4m), new("Lifting Peeling", 100m, 15m, 1m) },

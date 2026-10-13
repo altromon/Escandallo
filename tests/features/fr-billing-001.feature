@@ -34,13 +34,13 @@ Feature: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por
 
   @idempotence
   Scenario Outline: Rechazo de contratación o activación ante planes de suscripción inexistentes o importes manipulados
-    Given un propietario autenticado en el centro "Centro Sol" solicita iniciar el pago en Stripe
-    When envía el plan "<plan_solicitado>" con importe declarado "<importe_cliente>"
-    Then el servidor valida la tarifa oficial en backend y responde con "<accion_billing>" y código HTTP <codigo_http>
+    Given un centro de estética solicita iniciar una sesión de suscripción con el plan "<plan_id>" e importe "<importe_eur>" EUR
+    When el servidor valida el catálogo oficial de tarifas de Stripe (14.90 EUR/mes o 149.00 EUR/año)
+    Then la solicitud de suscripción retorna estado "<resultado>" con código HTTP <codigo_http>
 
     Examples:
-      | plan_solicitado  | importe_cliente | accion_billing                            | codigo_http |
-      | PLAN_MENSUAL_EUR | 14.90           | CREAR_SESION_STRIPE_14_90_EUR             | 200         |
-      | PLAN_ANUAL_EUR   | 149.00          | CREAR_SESION_STRIPE_149_00_EUR            | 200         |
-      | PLAN_GRATIS_HACK | 0.00            | RECHAZAR_PLAN_NO_RECONOCIDO               | 400         |
-      | PLAN_MENSUAL_EUR | 0.01            | IGNORAR_IMPORTE_CLIENTE_USAR_TARIFA_14_90 | 200         |
+      | plan_id          | importe_eur | resultado             | codigo_http |
+      | PLAN_MENSUAL_EUR | 14.90       | sesion_creada         | 200         |
+      | PLAN_ANUAL_EUR   | 149.00      | sesion_creada         | 200         |
+      | PLAN_GRATIS_HACK | 0.00        | plan_invalido         | 422         |
+      | PLAN_MENSUAL_EUR | 0.01        | importe_no_autorizado | 422         |

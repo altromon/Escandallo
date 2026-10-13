@@ -31,13 +31,13 @@ Feature: Seguridad de Servidor frente a Ciberataques, Protección IDOR y Verific
 
   @security @mitigation
   Scenario Outline: Análisis de frontera en ventana temporal de firma de webhook (300s) y límite de peticiones por minuto
-    Given una petición entrante llega con antigüedad de firma de <edad_seg> segundos y contador de peticiones en <num_peticiones> por minuto
-    When el filtro perimetral de seguridad evalúa los umbrales configurados (máximo 300s y 30 peticiones/min)
+    Given una petición llega al servidor con antigüedad de firma <edad_firma_seg> segundos y tasa de <peticiones_minuto> peticiones/minuto
+    When el middleware de seguridad evalúa las fronteras de tolerancia (máximo 300s y 30 req/min)
     Then el servidor responde con código HTTP <codigo_http>
 
     Examples:
-      | edad_seg | num_peticiones | codigo_http |
-      | 299      | 29             | 200         |
-      | 300      | 30             | 200         |
-      | 301      | 10             | 400         |
-      | 50       | 31             | 429         |
+      | edad_firma_seg | peticiones_minuto | codigo_http |
+      | 299            | 29                | 200         |
+      | 300            | 30                | 200         |
+      | 301            | 10                | 400         |
+      | 50             | 31                | 429         |

@@ -29,11 +29,14 @@ public static class ExecutiveReportService
     public static (string Action, string State) SanitizeXlsxCellAndNumericValue(string rawName, string rawNumber)
     {
         bool validNumber = decimal.TryParse(rawNumber, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal val);
-        return (validNumber, val >= 0m, DdePrefixes.Contains(rawName[0])) switch
+        string trimmed = rawName.TrimStart();
+        bool hasDde = trimmed.Length > 0 && DdePrefixes.Contains(trimmed[0]);
+        return (validNumber, val >= 0m, val <= 1_000_000m, hasDde) switch
         {
-            (false, _, _) => ("rechazar_entrada_aritmetica_invalida", "HTTP_422"),
-            (true, false, _) => ("rechazar_entrada_aritmetica_invalida", "HTTP_422"),
-            (true, true, true) => ("escapar_prefijo_como_texto_literal", "SANITIZADO"),
+            (false, _, _, _) => ("rechazar_entrada_aritmetica_invalida", "HTTP_422"),
+            (true, false, _, _) => ("rechazar_entrada_aritmetica_invalida", "HTTP_422"),
+            (true, true, false, _) => ("rechazar_desbordamiento_decimal_128bit", "HTTP_422"),
+            (true, true, true, true) => ("escapar_prefijo_como_texto_literal", "SANITIZADO"),
             _ => ("mantener_texto_seguro", "VALIDO")
         };
     }

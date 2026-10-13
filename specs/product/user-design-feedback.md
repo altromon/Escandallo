@@ -71,5 +71,30 @@ Adoptando la perspectiva real de **`ACT-ESTHETIC-USER-001`** (directora de clín
 
 ## 4. Open Questions para el Product Owner (`open-questions`)
 
-1. **Tarifa de Suscripción en Stripe (`BR-FREEMIUM-QUOTA-001`)**: ¿Confirmas la tarifa propuesta de **14,90 €/mes** (y **149 €/año** con 2 meses gratis, más IVA) por centro de estética?
-2. **Incorporación de Mejoras al MVP Core**: ¿Apruebas incorporar al alcance del MVP las **5 mejoras marcadas como 🟢 MVP Core** (Archivado para cumplir cuota sin pérdida de datos, `PVP Comercial Fijado` con semáforo de margen, Constructor dinámico con previsualización de impacto, Plantilla semilla/Importación `.xlsx` + Duplicación, y unidad `g` / `% merma`) para reflejarlas en los `FR-*` antes de pasar al modelado de amenazas?
+1. **Tarifa de Suscripción en Stripe (`BR-FREEMIUM-QUOTA-001`)**: ¿Confirmas la tarifa propuesta de **14,90 €/mes** (y **149 €/año** con 2 meses gratis, más IVA) por centro de estética? *(Resuelta y aprobada en `v1.1.0`)*.
+2. **Incorporación de Mejoras al MVP Core**: ¿Apruebas incorporar al alcance del MVP las **5 mejoras marcadas como 🟢 MVP Core** (Archivado para cumplir cuota sin pérdida de datos, `PVP Comercial Fijado` con semáforo de margen, Constructor dinámico con previsualización de impacto, Plantilla semilla/Importación `.xlsx` + Duplicación, y unidad `g` / `% merma`) para reflejarlas en los `FR-*` antes de pasar al modelado de amenazas? *(Resuelta e incorporada en `v1.1.0` / `v1.2.0`)*.
+
+---
+
+## 5. Validación Funcional Post-Desarrollo (Downstream / Gate 4 Pre-PR)
+
+> **Acting Role**: `agent-expert-user` (Functional Validation Mode)
+> **Evaluated Deliverable**: Implementación `.NET 10 LTS + Blazor` de `CHG-001-ESCANDALLO-MVP` (`TSK-001` a `TSK-007`)
+> **Date**: 2026-10-08
+> **Verdict**: **CONFORME (APPROVED FOR PRE-MERGE AUDIT TRIAD)**
+
+### 5.1 Matriz de Conformidad Funcional (`UC-*`, `FR-*`, `BR-*`, `QR-*`)
+
+| Caso de Uso / Requisito | Criterio de Aceptación Operativo Evaluado | Evidencia en Código y Pruebas | Estado |
+| :--- | :--- | :--- | :---: |
+| **`UC-COST-CATALOG-001` / `FR-COST-001` / `FR-TENANT-001`** | Alta/edición de Productos (`ml`, `g`, `ud` con `% Merma`), Personal, Gastos Generales y Parámetros en `System.Decimal` (128-bit), calculadora rápida de dosis de cabina (`gota`, `pulsacion`, `cucharadita`, `ampolla_vial`), plantilla semilla en 1 clic y copia de catálogo entre centros propios con aislamiento RLS. | `CostCatalogService.cs`, `CabinDoseEquivalenceService.cs`, `TenantIsolationSecurityService.cs`, `CostCatalogPage.razor`, `CostCatalogTests.cs`, `TenantIsolationSecurityTests.cs` | ✅ CUMPLE |
+| **`UC-ESCANDALLO-CALC-001` / `FR-CALC-001` / `FR-HIST-001`** | Cálculo exacto de Escandallo Total, Beneficio Neto, Precio sin IVA, `PVP Calculado` vs `PVP Comercial Fijado`, Semáforo de Rentabilidad, previsualización de impacto antes de guardar, recálculo síncrono en cascada e histórico condicional inmutable con baja lógica (`archived`). | `EscandalloCalculatorService.cs`, `CascadeHistoryService.cs`, `EscandalloBuilderPage.razor`, `CascadeImpactModal.razor`, `EscandalloCalculatorTests.cs`, `CascadeHistoryTests.cs` | ✅ CUMPLE |
+| **`UC-EXEC-REPORT-001` / `FR-REPORT-001`** | Exportación ejecutiva acotada exclusivamente a **PDF (`.pdf`)** y **Excel (`.xlsx`)** con bytes reales (`PDFsharp` y `ClosedXML`), neutralización DDE (`TrimStart()` + `'` + `XLDataType.Text`) y lectura OOXML acotada (`BoundedReadStream` $\le 10\text{ MB}$). | `ExecutiveReportService.cs`, `OoxmlSecurityInspector.cs`, `RealPdfReportGenerator.cs`, `RealXlsxReportGenerator.cs`, `ExecutiveReportTests.cs`, `WebPersistenceAndReportBinaryTests.cs` | ✅ CUMPLE |
+| **`UC-SUBSCRIPTION-001` / `FR-BILLING-001` / `BR-FREEMIUM-QUOTA-001`** | Cuota gratuita de 2 servicios en uso con recálculo ilimitado, bloqueo en el 3er servicio o tras cancelación con $>2$ activos, desbloqueo sin pérdida de datos archivando servicios y pasarela Stripe (`14,90 €/mes` y `149,00 €/año` + IVA) con verificación HMAC sobre stream crudo ($\le 64\text{ KB}$). | `StripeBillingQuotaService.cs`, `StripeSignatureVerifier.cs`, `FreemiumPaywallModal.razor`, `StripeBillingQuotaTests.cs` | ✅ CUMPLE |
+| **`UC-OBSERVABILITY-001` / `FR-OBS-001`** | Extracción de logs/métricas para `ACT-MAINTAINER-001` (`JSON`, `CSV`, `OTLP`), cambio de nivel en caliente (`DEBUG` con TTL de $60\text{ min}$ que revierte a `INFO`), redacción recursiva `[REDACTED]` (incluyendo `credential_hash` y `Exception.Message`) y canal inmutable `SECURITY`. | `ObservabilityService.cs`, `LogSecuritySanitizer.cs`, `ObservabilityAndUiTests.cs`, `SecurityHardeningCryptoTests.cs` | ✅ CUMPLE |
+| **`QR-UI-A11Y-001` (`TSK-007`)** | Adaptabilidad móvil/tablet/PC (`portrait`/`landscape`) sin scroll horizontal, áreas táctiles $\ge 44\times44\text{ px}$, regiones `aria-live="polite"` y **lenguaje natural de dominio en español** sin códigos técnicos (`FR-*`, `QR-*`, `SEC-REQ-*`, `M1`–`M5`, `CMP-*`) ni enumerados crudos (`OPTIMO`, `ALERTA`, `CRITICO`, `active`, `archived`, `none`, `canceled`). | `MainResponsiveLayout.razor`, `CostCatalogPage.razor`, `EscandalloBuilderPage.razor`, `CascadeImpactModal.razor`, `FreemiumPaywallModal.razor`, `wwwroot/index.html`, `WebUiComponentService.cs`, `WebUiComponentTests.cs` | ✅ CUMPLE |
+
+### 5.2 Corrección Aplicada durante la Inspección Funcional
+
+- Durante la inspección del DOM dinámico en `src/Escandallo.Web/wwwroot/index.html`, se detectó que las plantillas JavaScript de `renderAll()`, `updatePvp()` y `btnCloneCenter` aún interpolaban etiquetas internas (`ARCHIVADO (M1)`, `Duplicar (M4)`, `Archivar (M1)`, `(Clon M4)`) y literales de enumerado (`OPTIMO`, `ALERTA`, `CRITICO`, `FREE`, `PRO`). Se han sustituido por mensajes naturales de negocio (*"Rentabilidad óptima: alcanzas tu margen objetivo"*, *"Margen ajustado: ganas menos de tu objetivo"*, *"Atención: estás perdiendo dinero con este precio"*, *"En uso"*, *"Archivado"*, *"Duplicar servicio"*, *"Archivar servicio"*, *"Plan Gratuito"*, *"Plan Pro"*), quedando alineados al 100% con los componentes Blazor y con `QR-UI-A11Y-001`.
+

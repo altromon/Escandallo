@@ -1,20 +1,20 @@
 @using Microsoft.AspNetCore.Components
 @namespace Escandallo.Core.Components
 
-<section aria-labelledby="catalog-heading" data-active-tab="@ActiveCategoryTab">
-    <h1 id="catalog-heading">Catálogo de Costes y Parámetros Configurables del Centro</h1>
-    <div role="tablist" aria-label="Categorías de Costes">
-        <button role="tab" aria-selected="@(ActiveCategoryTab == "Productos")" class="touch-target-44">Productos</button>
-        <button role="tab" aria-selected="@(ActiveCategoryTab == "Personal")" class="touch-target-44">Personal</button>
-        <button role="tab" aria-selected="@(ActiveCategoryTab == "GastosGenerales")" class="touch-target-44">Gastos Generales</button>
-        <button role="tab" aria-selected="@(ActiveCategoryTab == "Parametros")" class="touch-target-44">Parámetros (IVA, Beneficio, Capacidad, Equivalencias)</button>
+<section aria-labelledby="catalogHeading" data-active-tab="@ActiveCategoryTab">
+    <h1 id="catalogHeading">2. Catálogo de costes del centro</h1>
+    <div role="tablist" class="form-row" aria-label="Categorías de costes del centro">
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Productos")" class="btn touch-target-44">Cosméticos y productos</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Personal")" class="btn btn-secondary touch-target-44">Personal del centro</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "GastosGenerales")" class="btn btn-secondary touch-target-44">Gastos fijos del local</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Parametros")" class="btn btn-secondary touch-target-44">Impuestos y margen objetivo</button>
     </div>
-    <div role="region" aria-label="Asistente configurable de equivalencias de dosis de cabina (M5)">
-        <button type="button" class="touch-target-44" aria-label="1 pulsación (por defecto 2 ml, configurable)">1 Pulsación (@PulsacionMl ml)</button>
-        <button type="button" class="touch-target-44" aria-label="1 gota (por defecto 0.05 ml, configurable)">1 Gota (@GotaMl ml)</button>
-        <button type="button" class="touch-target-44" aria-label="1 cucharadita (por defecto 5 ml, configurable)">1 Cucharadita (@CucharaditaMl ml)</button>
-        <button type="button" class="touch-target-44" aria-label="1 ampolla o vial monodosis (por defecto 2 ml, configurable)">1 Ampolla/Vial Monodosis (@AmpollaVialMl ml)</button>
-        <button type="button" class="touch-target-44" aria-label="Cargar catálogo semilla en 1 clic (M4)">Cargar Plantilla Semilla</button>
+    <div role="region" class="dose-buttons-grid" aria-label="Equivalencia de dosis: pulsaciones, gotas, cucharaditas o viales a ml/g">
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 pulsación equivale a 2 ml">1 Pulsación (@PulsacionMl ml)</button>
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 gota equivale a 0.05 ml">1 Gota (@GotaMl ml)</button>
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 cucharadita equivale a 5 ml">1 Cucharadita (@CucharaditaMl ml)</button>
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 ampolla o vial monodosis equivale a 2 ml">1 Ampolla o vial monodosis (@AmpollaVialMl ml)</button>
+        <button type="button" class="btn touch-target-44" style="grid-column: 1 / -1;" aria-label="Cargar catálogo de ejemplo en 1 clic">Cargar catálogo de ejemplo</button>
     </div>
 </section>
 

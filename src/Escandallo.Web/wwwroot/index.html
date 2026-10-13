@@ -7,97 +7,165 @@
   <link rel="stylesheet" href="/app.css" />
 </head>
 <body>
-  <div class="escandallo-app-shell" role="application" aria-label="Plataforma SaaS de Escandallos para Centros de Estética">
+  <div class="escandallo-app-shell" role="application" aria-label="Plataforma SaaS de Escandallos para Centros de Estética" data-viewport="pc:landscape">
     <header class="topbar" role="banner">
-      <div>
+      <div class="topbar-brand">
         <strong style="font-size:1.2rem;">Escandallo SaaS</strong>
-        <span id="planBadge" class="badge badge-OPTIMO" style="margin-left:0.5rem;">PLAN FREE (2/2 activos)</span>
+        <span id="userAccountBadge" class="badge badge-ALERTA">Sesión no iniciada</span>
+        <span id="planBadge" class="badge badge-OPTIMO" style="display:none;">Plan Gratuito (2 de 2 servicios en uso)</span>
+        <button class="btn btn-secondary" id="btnLogoutHeader" type="button" aria-label="Cerrar sesión y volver a la pantalla de acceso" style="display:none;">Cerrar sesión</button>
       </div>
-      <nav aria-label="Selector de centro y acciones globales" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-        <label for="centerSelect" style="font-weight:600;">Centro:</label>
-        <select id="centerSelect" aria-label="Seleccionar Centro Activo"></select>
-        <button class="btn btn-secondary" id="btnSeedReset" type="button">Cargar Plantilla Semilla 1-Clic (M4)</button>
-        <button class="btn btn-secondary" id="btnCloneCenter" type="button">Clonar Catálogo (M4)</button>
-        <button class="btn" id="btnOpenPaywall" type="button">Suscripción Stripe (14,90 €/mes)</button>
+      <nav id="authenticatedTopbarNav" class="topbar-nav" aria-label="Selector de centro y acciones globales" style="display:none;">
+        <label for="centerSelect" style="font-weight:600;">Mis centros:</label>
+        <select id="centerSelect" aria-label="Seleccionar centro de estética"></select>
+        <input id="newCenterNameInput" placeholder="Nombre de nuevo centro" aria-label="Nombre de nuevo centro propio" />
+        <button class="btn btn-secondary" id="btnCreateCenter" type="button">Crear nuevo centro</button>
+        <button class="btn btn-secondary" id="btnSeedReset" type="button">Cargar catálogo de ejemplo en 1 clic</button>
+        <button class="btn btn-secondary" id="btnCloneCenter" type="button">Copiar catálogo a otro centro propio</button>
+        <button class="btn" id="btnOpenPaywall" type="button">Activar Plan Pro (14,90 €/mes)</button>
+        <button class="btn btn-secondary" id="btnLogout" type="button" aria-label="Cerrar sesión y volver a la pantalla de acceso">Cerrar sesión</button>
       </nav>
     </header>
 
-    <main class="container" role="main">
-      <section class="card" aria-labelledby="paramsHeading">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-          <h2 id="paramsHeading" style="margin:0;">1. Parámetros Globales y Equivalencias de Dosis de Cabina (OQ-01 / M5)</h2>
-          <button class="btn" id="btnSaveParams" type="button">Guardar Parámetros y Recalcular</button>
+    <section id="authGateSection" class="container" aria-labelledby="authGateHeading" style="max-width:960px; margin:2rem auto;">
+      <div class="card" style="border-left:6px solid #0284c7;">
+        <h1 id="authGateHeading" style="margin:0 0 0.4rem 0; font-size:1.35rem;">Acceso para titulares de centros de estética</h1>
+        <p style="margin:0; color:var(--muted);">Inicia sesión con tu cuenta o regístrate para gestionar tus centros de estética de forma privada y aislada.</p>
+        <div id="authStatusBanner" role="status" aria-live="polite" style="margin-top:0.5rem; font-weight:600; color:#dc2626;"></div>
+      </div>
+
+      <div class="grid-2">
+        <section class="card" aria-labelledby="loginCardHeading">
+          <h2 id="loginCardHeading" style="margin-top:0;">Iniciar sesión con mi cuenta</h2>
+          <div class="param-grid" style="flex-direction:column;">
+            <label>Correo electrónico:
+              <input id="loginEmail" type="email" value="cliente-a@estetica.es" placeholder="tu-correo@estetica.es" />
+            </label>
+            <label>Contraseña:
+              <input id="loginPassword" type="password" value="Estetica2026!" placeholder="Contraseña" />
+            </label>
+            <button class="btn" id="btnLoginSubmit" type="button" style="width:100%;">Iniciar sesión</button>
+          </div>
+          <div style="margin-top:1rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+            <strong style="display:block; margin-bottom:0.5rem; font-size:0.9rem;">Cuentas de demostración listas para probar:</strong>
+            <div class="form-row">
+              <button class="btn btn-secondary" type="button" onclick="quickLogin('cliente-a@estetica.es', 'Estetica2026!')">Entrar como Cliente A (Madrid y Valencia)</button>
+              <button class="btn btn-secondary" type="button" onclick="quickLogin('cliente-b@estetica.es', 'Estetica2026!')">Entrar como Cliente B (Sevilla)</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="registerCardHeading">
+          <h2 id="registerCardHeading" style="margin-top:0;">Crear cuenta nueva de cliente</h2>
+          <div class="param-grid" style="flex-direction:column;">
+            <label>Nombre o titular:
+              <input id="regDisplayName" type="text" placeholder="Ej. Laura Gómez — Directora" />
+            </label>
+            <label>Correo electrónico:
+              <input id="regEmail" type="email" placeholder="nuevo-centro@estetica.es" />
+            </label>
+            <label>Contraseña:
+              <input id="regPassword" type="password" placeholder="Mínimo 8 caracteres" />
+            </label>
+            <label>Nombre de tu primer centro de estética:
+              <input id="regCenterName" type="text" placeholder="Ej. Estética Serrano Madrid" />
+            </label>
+            <button class="btn" id="btnRegisterSubmit" type="button" style="width:100%;">Crear cuenta y dar de alta mi centro</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <main id="workspaceMain" class="container point-1-full-width" role="main" style="display:none;">
+      <section id="escandallosSection" class="card point-1-full-width" aria-labelledby="escandallosHeading">
+        <div class="section-header-row">
+          <h2 id="escandallosHeading" style="margin:0;">1. Calculadora de servicios y semáforo de rentabilidad</h2>
+          <div class="bulk-download-actions" role="group" aria-label="Descargar informes de todos los servicios de un golpe">
+            <a class="btn" id="btnDownloadAllPdf" href="/api/reports/pdf?centerId=center-madrid-01" target="_blank">Descargar PDF de todos los servicios</a>
+            <a class="btn" id="btnDownloadAllXlsx" href="/api/reports/xlsx?centerId=center-madrid-01" target="_blank">Descargar XLSX de todos los servicios</a>
+          </div>
         </div>
-        <div class="param-grid" id="paramInputs" style="margin-top:0.85rem;"></div>
-        <h3 style="margin:1rem 0 0.5rem 0; font-size:1rem;">Equivalencias Configurables de Cabina (ml por unidad física)</h3>
-        <div class="param-grid" id="doseInputs"></div>
-        <div style="margin-top:0.75rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; background:#f1f5f9; padding:0.6rem; border-radius:0.5rem;">
-          <strong>Asistente de Dosis (M5):</strong>
-          <input id="assistCount" type="number" step="1" value="2" style="width:80px;" aria-label="Número de unidades" />
-          <select id="assistUnit" aria-label="Unidad de cabina">
-            <option value="pulsacion">Pulsación</option>
-            <option value="gota">Gota</option>
-            <option value="cucharadita">Cucharadita</option>
-            <option value="ampolla_vial">Ampolla / Vial Monodosis</option>
-          </select>
-          <button class="btn btn-secondary" id="btnCalcDose" type="button">Calcular ml y Aplicar a Producto</button>
-          <span id="assistResult" style="font-weight:700;">= 4.00 ml</span>
+
+        <div class="form-panel">
+          <h3 style="margin:0 0 0.5rem 0; font-size:1rem;">Crear o simular un nuevo servicio estético</h3>
+          <div class="form-row">
+            <input id="svcName" placeholder="Nombre del servicio" value="Radiofrecuencia Facial" aria-label="Nombre del servicio" />
+            <input id="svcDuration" type="number" step="5" value="45" aria-label="Duración en minutos" />
+            <select id="svcRole" aria-label="Profesional asignado"></select>
+            <input id="svcPvp" type="number" step="0.5" value="35.00" aria-label="Precio de venta al público en euros" />
+          </div>
+          <div class="form-row" style="margin-top:0.5rem;">
+            <select id="recipeProdSelect" aria-label="Producto para el servicio"></select>
+            <input id="recipeProdMl" type="number" step="0.1" value="2" aria-label="Dosis en ml para el servicio" />
+            <button class="btn btn-secondary" id="btnAddRecipeLine" type="button">Añadir producto al servicio</button>
+            <button class="btn" id="btnCreateEscandallo" type="button">Guardar nuevo servicio</button>
+          </div>
+          <div id="draftRecipeList" style="margin-top:0.5rem; font-size:0.88rem; color:var(--muted);"></div>
         </div>
+
+        <div id="semaphoreLiveRegion" role="status" aria-live="polite" aria-atomic="true" style="margin:0.5rem 0; font-weight:600;"></div>
+        <div id="escandallosList" style="display:grid; gap:1rem; grid-template-columns:minmax(0, 1fr);"></div>
       </section>
 
       <div class="grid-2">
         <section class="card" aria-labelledby="catalogHeading">
-          <h2 id="catalogHeading" style="margin-top:0;">2. Catálogo de Costes (Productos, Personal, Gastos Fijos)</h2>
-          <div role="tablist" aria-label="Categorías de Costes" style="display:flex; gap:0.5rem; margin-bottom:0.85rem; flex-wrap:wrap;">
-            <button role="tab" aria-selected="true" class="btn" id="tabBtnProd" onclick="switchCatalogTab('prod')">Productos</button>
-            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnStaff" onclick="switchCatalogTab('staff')">Personal</button>
-            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnOvh" onclick="switchCatalogTab('ovh')">Gastos Generales</button>
-            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnXlsx" onclick="switchCatalogTab('xlsx')">Importar .xlsx Seguro</button>
+          <h2 id="catalogHeading" style="margin-top:0;">2. Catálogo de costes del centro</h2>
+          <div role="tablist" aria-label="Categorías de costes del centro" class="form-row" style="margin-bottom:0.85rem;">
+            <button role="tab" aria-selected="true" class="btn" id="tabBtnProd" onclick="switchCatalogTab('prod')">Cosméticos y productos</button>
+            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnStaff" onclick="switchCatalogTab('staff')">Personal del centro</button>
+            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnOvh" onclick="switchCatalogTab('ovh')">Gastos fijos del local</button>
+            <button role="tab" aria-selected="false" class="btn btn-secondary" id="tabBtnXlsx" onclick="switchCatalogTab('xlsx')">Importar archivo Excel</button>
           </div>
 
           <div id="catalogPaneProd">
-            <table id="productsTable">
-              <thead><tr><th>Producto</th><th>Envase (ml)</th><th>Precio (€)</th><th>Dosis (ml)</th><th>Coste/Serv (+Merma)</th></tr></thead>
-              <tbody></tbody>
-            </table>
-            <div style="display:flex; gap:0.5rem; margin-top:0.65rem; flex-wrap:wrap;">
-              <input id="newProdName" placeholder="Nombre producto" aria-label="Nombre producto" />
-              <input id="newProdMl" type="number" step="1" value="200" style="width:90px;" aria-label="Tamaño ml" />
-              <input id="newProdPrice" type="number" step="0.5" value="15" style="width:90px;" aria-label="Precio EUR" />
-              <input id="newProdDose" type="number" step="0.05" value="2" style="width:90px;" aria-label="Dosis ml" />
-              <button class="btn" id="btnAddProd" type="button">Añadir / Actualizar Producto</button>
+            <div class="table-responsive">
+              <table id="productsTable">
+                <thead><tr><th>Producto</th><th>Envase (ml)</th><th>Precio (€)</th><th>Dosis (ml)</th><th>Coste por servicio</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="form-row" style="margin-top:0.65rem;">
+              <input id="newProdName" placeholder="Nombre del cosmético" aria-label="Nombre del cosmético" />
+              <input id="newProdMl" type="number" step="1" value="200" aria-label="Tamaño en ml" />
+              <input id="newProdPrice" type="number" step="0.5" value="15" aria-label="Precio en euros" />
+              <input id="newProdDose" type="number" step="0.05" value="2" aria-label="Dosis en ml" />
+              <button class="btn" id="btnAddProd" type="button">Guardar producto</button>
             </div>
           </div>
 
           <div id="catalogPaneStaff" style="display:none;">
-            <table id="staffTable">
-              <thead><tr><th>Categoría / Rol</th><th>Sueldo Mensual (€)</th><th>Coste / Minuto (€)</th></tr></thead>
-              <tbody></tbody>
-            </table>
-            <div style="display:flex; gap:0.5rem; margin-top:0.65rem; flex-wrap:wrap;">
-              <input id="newStaffRole" placeholder="Rol (ej. Tecnico)" value="Tecnico" aria-label="Rol de personal" />
-              <input id="newStaffSalary" type="number" step="50" value="1100" style="width:120px;" aria-label="Sueldo mensual EUR" />
-              <button class="btn" id="btnSaveStaff" type="button">Guardar Sueldo Personal</button>
+            <div class="table-responsive">
+              <table id="staffTable">
+                <thead><tr><th>Categoría profesional</th><th>Sueldo mensual (€)</th><th>Coste por minuto (€)</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="form-row" style="margin-top:0.65rem;">
+              <input id="newStaffRole" placeholder="Categoría (ej. Técnico)" value="Tecnico" aria-label="Categoría profesional" />
+              <input id="newStaffSalary" type="number" step="50" value="1100" aria-label="Sueldo mensual en euros" />
+              <button class="btn" id="btnSaveStaff" type="button">Guardar personal</button>
             </div>
           </div>
 
           <div id="catalogPaneOvh" style="display:none;">
-            <table id="ovhTable">
-              <thead><tr><th>Concepto Gasto Fijo</th><th>Importe Mensual (€)</th></tr></thead>
-              <tbody></tbody>
-            </table>
-            <div style="display:flex; gap:0.5rem; margin-top:0.65rem; flex-wrap:wrap;">
-              <input id="newOvhName" placeholder="Concepto (ej. Local)" value="Local" aria-label="Concepto gasto fijo" />
-              <input id="newOvhAmount" type="number" step="25" value="800" style="width:120px;" aria-label="Importe mensual EUR" />
-              <button class="btn" id="btnSaveOvh" type="button">Guardar Gasto General</button>
+            <div class="table-responsive">
+              <table id="ovhTable">
+                <thead><tr><th>Concepto de gasto fijo</th><th>Importe mensual (€)</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="form-row" style="margin-top:0.65rem;">
+              <input id="newOvhName" placeholder="Concepto (ej. Alquiler)" value="Local" aria-label="Concepto de gasto fijo" />
+              <input id="newOvhAmount" type="number" step="25" value="800" aria-label="Importe mensual en euros" />
+              <button class="btn" id="btnSaveOvh" type="button">Guardar gasto fijo</button>
             </div>
           </div>
 
           <div id="catalogPaneXlsx" style="display:none;">
-            <p style="margin-top:0;">Validador OOXML Anti-XXE / ZipBomb / DDE (<code>SEC-REQ-XLSX-001</code>):</p>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-              <input id="xlsxCellInput" value="=CMD|' /C calc'!A0" aria-label="Celda de prueba DDE" style="flex:1;" />
-              <button class="btn" id="btnInspectXlsx" type="button">Inspeccionar y Sanitizar Celda</button>
+            <p style="margin-top:0;">Verificación de seguridad antes de importar tu catálogo Excel:</p>
+            <div class="form-row">
+              <input id="xlsxCellInput" value="=CMD|' /C calc'!A0" aria-label="Texto de celda a verificar" />
+              <button class="btn" id="btnInspectXlsx" type="button">Comprobar y limpiar celda</button>
             </div>
             <p id="xlsxInspectResult" style="font-weight:600; margin-top:0.5rem;"></p>
           </div>
@@ -105,51 +173,52 @@
           <div id="staffAndOverheadSummary" style="margin-top:0.85rem; font-size:0.9rem; color:var(--muted);"></div>
         </section>
 
-        <section class="card" aria-labelledby="escandallosHeading">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <h2 id="escandallosHeading" style="margin:0;">3. Constructor Dinámico 1:N y Semáforo de Margen (OQ-02 / M2 / M3)</h2>
+        <section class="card" aria-labelledby="paramsHeading">
+          <div class="section-header-row">
+            <h2 id="paramsHeading" style="margin:0;">3. Impuestos, margen objetivo y equivalencias de dosis de cabina</h2>
+            <button class="btn" id="btnSaveParams" type="button">Guardar configuración y actualizar servicios</button>
           </div>
-
-          <div style="background:#f8fafc; border:1px solid var(--border); border-radius:0.5rem; padding:0.85rem; margin:0.75rem 0;">
-            <h3 style="margin:0 0 0.5rem 0; font-size:1rem;">Crear / Simular Nuevo Escandallo con Receta 1:N</h3>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-              <input id="svcName" placeholder="Nombre del servicio" value="Radiofrecuencia Facial" aria-label="Nombre del servicio" />
-              <input id="svcDuration" type="number" step="5" value="45" style="width:90px;" aria-label="Duración en minutos" />
-              <select id="svcRole" aria-label="Rol de personal asignado"></select>
-              <input id="svcPvp" type="number" step="0.5" value="35.00" style="width:100px;" aria-label="PVP Comercial Fijado EUR" />
+          <div class="param-grid" id="paramInputs" style="margin-top:0.85rem;"></div>
+          <h3 style="margin:1rem 0 0.5rem 0; font-size:1rem;">Equivalencia de dosis: pulsaciones, gotas, cucharaditas o viales a ml/g</h3>
+          <div class="param-grid dose-grid" id="doseInputs"></div>
+          <div class="dose-assistant-box">
+            <strong>Calculadora de dosis de cabina:</strong>
+            <div class="form-row">
+              <input id="assistCount" type="number" step="1" value="2" aria-label="Número de unidades" />
+              <select id="assistUnit" aria-label="Unidad de cabina">
+                <option value="pulsacion">Pulsación</option>
+                <option value="gota">Gota</option>
+                <option value="cucharadita">Cucharadita</option>
+                <option value="ampolla_vial">Ampolla o vial monodosis</option>
+              </select>
+              <button class="btn btn-secondary" id="btnCalcDose" type="button">Calcular ml y aplicar al producto</button>
+              <span id="assistResult" class="dose-assistant-result">= 4.00 ml</span>
             </div>
-            <div style="margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-              <select id="recipeProdSelect" aria-label="Producto para receta"></select>
-              <input id="recipeProdMl" type="number" step="0.1" value="2" style="width:85px;" aria-label="Dosis ml en receta" />
-              <button class="btn btn-secondary" id="btnAddRecipeLine" type="button">+ Añadir Línea 1:N</button>
-              <button class="btn" id="btnCreateEscandallo" type="button">Guardar Nuevo Escandallo</button>
-            </div>
-            <div id="draftRecipeList" style="margin-top:0.4rem; font-size:0.88rem; color:var(--muted);"></div>
           </div>
-
-          <div id="semaphoreLiveRegion" role="status" aria-live="polite" aria-atomic="true" style="margin:0.5rem 0; font-weight:600;"></div>
-          <div id="escandallosList" style="display:grid; gap:1rem;"></div>
         </section>
       </div>
 
       <div class="grid-2">
         <section class="card" aria-labelledby="historyHeading">
-          <h2 id="historyHeading" style="margin-top:0;">4. Historial Inmutable de Costes (BR-RECALC-HISTORY-001)</h2>
+          <h2 id="historyHeading" style="margin-top:0;">4. Histórico de servicios archivados y actualizaciones de precios</h2>
+          <h3 style="margin:0.5rem 0; font-size:1rem;">Servicios archivados (ordenados por fecha de archivado descendente)</h3>
+          <div id="archivedServicesList" style="display:grid; gap:0.75rem; grid-template-columns:minmax(0, 1fr); margin-bottom:1rem;">Sin servicios archivados actualmente.</div>
+          <h3 style="margin:0.75rem 0 0.5rem 0; font-size:1rem;">Historial de cambios de precios</h3>
           <div id="historyContainer">Sin cambios registrados en esta sesión.</div>
         </section>
 
         <section class="card" aria-labelledby="obsHeading">
-          <h2 id="obsHeading" style="margin-top:0;">5. Consola de Observabilidad RBAC y Nivel en Caliente (FR-OBS-001)</h2>
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-            <select id="obsRole" aria-label="Rol de actor para observabilidad">
-              <option value="ACT-MAINTAINER-001">ACT-MAINTAINER-001 (Mantenedor)</option>
-              <option value="ACT-ESTHETIC-USER-001">ACT-ESTHETIC-USER-001 (Usuario Centro)</option>
+          <h2 id="obsHeading" style="margin-top:0;">5. Diagnóstico técnico para soporte del sistema</h2>
+          <div class="form-row">
+            <select id="obsRole" aria-label="Perfil de acceso de soporte">
+              <option value="ACT-MAINTAINER-001">Equipo de soporte técnico</option>
+              <option value="ACT-ESTHETIC-USER-001">Dirección del centro de estética</option>
             </select>
-            <select id="obsLevel" aria-label="Nivel de log objetivo">
-              <option value="DEBUG">DEBUG (Auto-revert TTL 60m)</option>
-              <option value="INFO">INFO</option>
+            <select id="obsLevel" aria-label="Nivel de detalle del registro">
+              <option value="DEBUG">Diagnóstico detallado (durante 60 minutos)</option>
+              <option value="INFO">Registro habitual</option>
             </select>
-            <button class="btn btn-secondary" id="btnApplyObs" type="button">Aplicar Nivel y Sanitizar Log</button>
+            <button class="btn btn-secondary" id="btnApplyObs" type="button">Aplicar diagnóstico seguro</button>
           </div>
           <p id="obsResult" style="margin:0.6rem 0 0 0; font-size:0.9rem;"></p>
         </section>
@@ -158,24 +227,24 @@
 
     <div class="modal-backdrop" id="cascadeModal" role="dialog" aria-modal="true" aria-labelledby="cascadeTitle">
       <div class="card" style="max-width:480px; width:100%;">
-        <h3 id="cascadeTitle" style="margin-top:0;">Confirmar Recálculo en Cascada (M3)</h3>
+        <h3 id="cascadeTitle" style="margin-top:0;">Actualización automática de tus servicios</h3>
         <p id="cascadeMessage"></p>
-        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <div class="form-row" style="justify-content:flex-end;">
           <button class="btn btn-secondary" id="btnCancelCascade" type="button">Cancelar</button>
-          <button class="btn" id="btnConfirmCascade" type="button">Confirmar y Guardar Historial</button>
+          <button class="btn" id="btnConfirmCascade" type="button">Guardar y actualizar servicios</button>
         </div>
       </div>
     </div>
 
     <div class="modal-backdrop" id="paywallModal" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
       <div class="card" style="max-width:520px; width:100%;">
-        <h3 id="paywallTitle" style="margin-top:0;">Cuota Freemium (HTTP 402 — 2 Escandallos Activos Gratis)</h3>
-        <p>Tu centro dispone de <strong>2 escandallos activos gratuitos</strong> con recálculos ilimitados. Para activar más escandallos, archiva uno existente sin perder su histórico (M1) o contrata <strong>Escandallo PRO en Stripe</strong>:</p>
-        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
-          <button class="btn" type="button" onclick="checkoutStripe('PLAN_MENSUAL_EUR', 14.90)">Suscripción Mensual (14,90 €/mes)</button>
-          <button class="btn" type="button" onclick="checkoutStripe('PLAN_ANUAL_EUR', 149.00)">Suscripción Anual (149,00 €/año)</button>
+        <h3 id="paywallTitle" style="margin-top:0;">Has alcanzado el límite de 2 servicios activos del plan gratuito</h3>
+        <p>Tu centro dispone de <strong>2 servicios en uso gratuitos</strong> con recálculos ilimitados. Para añadir otro servicio, archiva uno que no utilices ahora sin perder su historial o activa el <strong>Plan Pro en Stripe</strong>:</p>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <button class="btn" type="button" onclick="checkoutStripe('PLAN_MENSUAL_EUR', 14.90)">Plan Pro mensual (14,90 €/mes + IVA)</button>
+          <button class="btn" type="button" onclick="checkoutStripe('PLAN_ANUAL_EUR', 149.00)">Plan Pro anual (149,00 €/año + IVA)</button>
         </div>
-        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <div class="form-row" style="justify-content:flex-end;">
           <button class="btn btn-secondary" id="btnClosePaywall" type="button">Cerrar</button>
         </div>
       </div>
@@ -184,11 +253,43 @@
 
   <script>
     let currentState = null;
+    let currentUser = null;
     let pendingAction = null;
     let draftRecipe = [{ productName: 'Cleasing Milk', cantidadServicioMl: 2 }, { productName: 'Colagen Mask', cantidadServicioMl: 4 }];
 
-    async function loadState(centerId = 'center-madrid-01') {
-      const res = await fetch(`/api/state?centerId=${encodeURIComponent(centerId)}`);
+    function syncResponsiveViewport() {
+      const shell = document.querySelector('.escandallo-app-shell');
+      if (!shell) return;
+      const w = window.innerWidth || 1024;
+      const h = window.innerHeight || 768;
+      const orient = w >= h ? 'landscape' : 'portrait';
+      const dev = w < 768 ? 'movil' : (w < 1024 ? 'tablet' : 'pc');
+      shell.setAttribute('data-viewport', `${dev}:${orient}`);
+    }
+    window.addEventListener('resize', syncResponsiveViewport);
+    syncResponsiveViewport();
+
+    function setAuthenticatedView(isAuth, userObj = null) {
+      currentUser = userObj;
+      document.getElementById('authGateSection').style.display = isAuth ? 'none' : 'grid';
+      document.getElementById('workspaceMain').style.display = isAuth ? 'grid' : 'none';
+      document.getElementById('authenticatedTopbarNav').style.display = isAuth ? 'flex' : 'none';
+      document.getElementById('planBadge').style.display = isAuth ? 'inline-flex' : 'none';
+      document.getElementById('btnLogoutHeader').style.display = isAuth ? 'inline-flex' : 'none';
+      const userBadge = document.getElementById('userAccountBadge');
+      userBadge.textContent = isAuth && userObj ? `Titular: ${userObj.email}` : 'Sesión no iniciada';
+      userBadge.className = isAuth ? 'badge badge-OPTIMO' : 'badge badge-ALERTA';
+      syncResponsiveViewport();
+    }
+
+    async function loadState(centerId = '') {
+      const target = centerId || (currentState && currentState.tenant ? currentState.tenant.centerId : 'center-madrid-01');
+      const res = await fetch(`/api/state?centerId=${encodeURIComponent(target)}&requireAuth=1`);
+      if (res.status === 401) {
+        setAuthenticatedView(false, null);
+        return;
+      }
+      if (!res.ok) return;
       currentState = await res.json();
       renderAll();
     }
@@ -223,7 +324,7 @@
     function renderDraftRecipe() {
       document.getElementById('draftRecipeList').innerHTML =
         '<strong>Receta actual (' + draftRecipe.length + ' productos):</strong> ' +
-        draftRecipe.map((r, i) => `${r.productName} (${r.cantidadServicioMl} ml) <button type="button" onclick="removeDraftLine(${i})" style="min-height:24px;min-width:24px;padding:0 6px;">×</button>`).join(' · ');
+        draftRecipe.map((r, i) => `<span class="badge" style="background:#e2e8f0;color:var(--text);margin:0.15rem 0.25rem 0.15rem 0;gap:0.35rem;">${r.productName} (${r.cantidadServicioMl} ml) <button type="button" class="btn btn-secondary" onclick="removeDraftLine(${i})" style="min-height:26px;min-width:26px;padding:0 0.45rem;border-radius:999px;font-size:0.85rem;">×</button></span>`).join(' ');
     }
 
     window.removeDraftLine = function(idx) {
@@ -231,16 +332,33 @@
       renderDraftRecipe();
     };
 
+    function renderRecipeLinesList(e, t) {
+      const linesHtml = (e.recipe || []).map(r => {
+        const prod = t.products.find(p => p.name === r.productName);
+        const unitCost = prod ? ((prod.precioCompra / prod.cantidadMl) * r.cantidadServicioMl * (1 + t.parameters.mermaPct)).toFixed(2) : '0.00';
+        return `<li><strong>${r.productName}</strong>: ${r.cantidadServicioMl} ml (${unitCost} €)</li>`;
+      }).join('');
+      return `<div style="margin-top:0.5rem;">
+        <strong>Productos del servicio (${(e.recipe || []).length} cosméticos):</strong>
+        <ul style="margin:0.35rem 0 0 1.2rem; padding:0;">${linesHtml}</ul>
+      </div>`;
+    }
+
     function renderAll() {
       const t = currentState.tenant;
       const cat = currentState.catalog;
       const sel = document.getElementById('centerSelect');
       sel.innerHTML = currentState.centers.map(c =>
-        `<option value="${c.centerId}" ${c.centerId === t.centerId ? 'selected' : ''}>${c.centerName} (${c.subscriptionPlan})</option>`
+        `<option value="${c.centerId}" ${c.centerId === t.centerId ? 'selected' : ''}>${c.centerName} (${c.subscriptionPlan === 'PRO' ? 'Plan Pro' : 'Plan Gratuito'})</option>`
       ).join('');
 
+      document.getElementById('btnDownloadAllPdf').href = `/api/reports/pdf?centerId=${encodeURIComponent(t.centerId)}`;
+      document.getElementById('btnDownloadAllXlsx').href = `/api/reports/xlsx?centerId=${encodeURIComponent(t.centerId)}`;
+
       const badge = document.getElementById('planBadge');
-      badge.textContent = `PLAN ${t.subscriptionPlan} (${currentState.activeCount} activos)`;
+      badge.textContent = t.subscriptionPlan === 'PRO'
+        ? `Plan Pro (${currentState.activeCount} servicios en uso)`
+        : `Plan Gratuito (${currentState.activeCount} de 2 servicios en uso)`;
       badge.className = `badge ${t.subscriptionPlan === 'PRO' ? 'badge-OPTIMO' : 'badge-ALERTA'}`;
 
       const p = t.parameters;
@@ -255,8 +373,9 @@
       `;
 
       const d = t.doseEquivalencesMl || { gota: 0.05, pulsacion: 2.0, cucharadita: 5.0, ampolla_vial: 2.0 };
+      const doseLabels = { gota: 'Gota', pulsacion: 'Pulsación', cucharadita: 'Cucharadita', ampolla_vial: 'Ampolla o vial monodosis' };
       document.getElementById('doseInputs').innerHTML = Object.entries(d).map(([k, v]) =>
-        `<label>${k} (ml): <input data-dose="${k}" type="number" step="0.01" value="${v}" /></label>`
+        `<label>${doseLabels[k] || k} (ml): <input data-dose="${k}" type="number" step="0.01" value="${v}" /></label>`
       ).join('');
 
       document.querySelector('#productsTable tbody').innerHTML = t.products.map(prod => {
@@ -286,36 +405,72 @@
         `<strong>Tarifa Gastos Generales:</strong> ${cat.overheadRatePerMinute.toFixed(4)} €/min · ` +
         t.staff.map(s => `<strong>${s.role}:</strong> ${cat.staff[s.role].costeMinuto.toFixed(4)} €/min`).join(' · ');
 
+      const activeItems = currentState.escandallos.filter(item => !item.record.archived);
       const listEl = document.getElementById('escandallosList');
-      listEl.innerHTML = currentState.escandallos.map(item => {
+      listEl.innerHTML = activeItems.map(item => {
         const e = item.record;
         const c = item.calculation;
         const s = item.semaphore;
-        const icon = s.status === 'OPTIMO' ? '🟢 OPTIMO' : (s.status === 'ALERTA' ? '🟡 ALERTA' : '🔴 CRITICO');
-        return `<article class="card" style="border-left: 6px solid ${s.status === 'OPTIMO' ? '#16a34a' : (s.status === 'ALERTA' ? '#ca8a04' : '#dc2626')};">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <div>
-              <strong>${e.name}</strong> (${e.duracionMinutos} min · ${e.staffRole})
-              ${e.archived ? '<span class="badge badge-CRITICO">ARCHIVADO (M1)</span>' : ''}
+        const icon = s.status === 'OPTIMO'
+          ? '🟢 Rentabilidad óptima'
+          : (s.status === 'ALERTA'
+              ? '🟡 Margen ajustado'
+              : '🔴 Atención: pérdida');
+        return `<details class="card service-card-collapsible" aria-expanded="false" style="padding:0.65rem 1rem; border-left: 6px solid ${s.status === 'OPTIMO' ? '#16a34a' : (s.status === 'ALERTA' ? '#ca8a04' : '#dc2626')};">
+          <summary class="service-collapsed-row touch-target-44" onclick="const d=this.parentElement; setTimeout(()=>d.setAttribute('aria-expanded', d.open ? 'true' : 'false'), 0)">
+            <strong class="service-col-name">${e.name}</strong>
+            <span class="desktop-tablet-only">${e.duracionMinutos} min · ${e.staffRole}</span>
+            <span class="service-col-cost">Coste total: <strong>${c.costeTotal.toFixed(2)} €</strong></span>
+            <span class="service-col-pvp">Precio de venta: <strong>${e.pvpComercialFijado.toFixed(2)} €</strong></span>
+            <span class="badge badge-${s.status} service-col-semaphore">${icon}</span>
+            <span class="desktop-tablet-only">
+              <button class="btn btn-secondary" type="button" onclick="event.stopPropagation(); duplicateEscandallo('${e.id}')">Duplicar servicio</button>
+              <button class="btn btn-secondary" type="button" onclick="event.stopPropagation(); toggleArchive('${e.id}')">Archivar servicio</button>
+            </span>
+          </summary>
+          <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+            <p style="margin:0 0 0.5rem 0;">
+              Tiempo: <strong>${e.duracionMinutos} min</strong> · Personal: <strong>${e.staffRole}</strong> |
+              Desglose de coste (Prod: ${c.costeProductos.toFixed(2)} € · Pers: ${c.costePersonal.toFixed(2)} € · Gastos: ${c.costeGastosGenerales.toFixed(2)} €) |
+              Beneficio Obj.: <strong>${c.beneficioNeto.toFixed(2)} €</strong> |
+              Precio recomendado: <strong>${c.pvpRecomendado.toFixed(2)} €</strong> |
+              Beneficio Real: <strong>${s.netProfit.toFixed(2)} € (${(s.realMarginRate * 100).toFixed(1)}%)</strong>
+            </p>
+            <div class="form-row">
+              <label>Precio de venta al público (€):
+                <input type="number" step="0.5" value="${e.pvpComercialFijado}" onchange="updatePvp('${e.id}', this.value)" />
+              </label>
+              <button class="btn btn-secondary" type="button" onclick="duplicateEscandallo('${e.id}')">Duplicar servicio</button>
+              <button class="btn btn-secondary" type="button" onclick="toggleArchive('${e.id}')">Archivar servicio</button>
             </div>
-            <span class="badge badge-${s.status}">${icon} · Beneficio Real ${s.netProfit.toFixed(2)} € (${(s.realMarginRate * 100).toFixed(1)}%)</span>
+            ${renderRecipeLinesList(e, t)}
           </div>
-          <p style="margin:0.5rem 0;">
-            Coste Total: <strong>${c.costeTotal.toFixed(2)} €</strong> (Prod: ${c.costeProductos.toFixed(2)} € · Pers: ${c.costePersonal.toFixed(2)} € · Gastos: ${c.costeGastosGenerales.toFixed(2)} €) |
-            Beneficio Obj.: <strong>${c.beneficioNeto.toFixed(2)} €</strong> |
-            PVP Calculado Recomendado: <strong>${c.pvpRecomendado.toFixed(2)} €</strong>
-          </p>
-          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-            <label>PVP Comercial Fijado (€):
-              <input type="number" step="0.5" value="${e.pvpComercialFijado}" onchange="updatePvp('${e.id}', this.value)" style="width:110px;" />
-            </label>
-            <button class="btn btn-secondary" type="button" onclick="duplicateEscandallo('${e.id}')">Duplicar (M4)</button>
-            <button class="btn btn-secondary" type="button" onclick="toggleArchive('${e.id}')">${e.archived ? 'Restaurar' : 'Archivar (M1)'}</button>
-            <a class="btn" href="/api/reports/pdf?centerId=${t.centerId}&serviceId=${e.id}" target="_blank">Descargar PDF</a>
-            <a class="btn" href="/api/reports/xlsx?centerId=${t.centerId}&serviceId=${e.id}" target="_blank">Descargar XLSX</a>
-          </div>
-        </article>`;
+        </details>`;
       }).join('');
+
+      const archivedItems = currentState.escandallos
+        .filter(item => item.record.archived)
+        .sort((a, b) => (b.record.archivedAtIso || '').localeCompare(a.record.archivedAtIso || ''));
+      const archivedEl = document.getElementById('archivedServicesList');
+      archivedEl.innerHTML = archivedItems.length === 0
+        ? 'Sin servicios archivados actualmente.'
+        : archivedItems.map(item => {
+            const e = item.record;
+            const c = item.calculation;
+            return `<details class="card service-card-collapsible" aria-expanded="false" data-archived-at="${e.archivedAtIso || ''}" style="padding:0.65rem 1rem; border-left: 6px solid #64748b;">
+              <summary class="service-collapsed-row touch-target-44" onclick="const d=this.parentElement; setTimeout(()=>d.setAttribute('aria-expanded', d.open ? 'true' : 'false'), 0)">
+                <strong class="service-col-name">${e.name}</strong>
+                <span class="desktop-tablet-only">${e.duracionMinutos} min · ${e.staffRole}</span>
+                <span class="service-col-cost">Coste total: <strong>${c.costeTotal.toFixed(2)} €</strong></span>
+                <span class="service-col-pvp">Precio de venta: <strong>${e.pvpComercialFijado.toFixed(2)} €</strong></span>
+                <span class="badge badge-CRITICO">Archivado (${e.archivedAtIso || 'Reciente'})</span>
+                <button class="btn btn-secondary" type="button" onclick="event.stopPropagation(); toggleArchive('${e.id}')">Restaurar servicio</button>
+              </summary>
+              <div style="margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+                ${renderRecipeLinesList(e, t)}
+              </div>
+            </details>`;
+          }).join('');
 
       const hist = t.costHistory || [];
       document.getElementById('historyContainer').innerHTML = hist.length === 0
@@ -331,8 +486,13 @@
       await saveTenant(t);
       const updatedItem = currentState.escandallos.find(x => x.record.id === id);
       if (updatedItem) {
+        const friendlyStatus = updatedItem.semaphore.status === 'OPTIMO'
+          ? 'Rentabilidad óptima: alcanzas tu margen objetivo'
+          : (updatedItem.semaphore.status === 'ALERTA'
+              ? 'Margen ajustado: ganas menos de tu objetivo'
+              : 'Atención: estás perdiendo dinero con este precio');
         document.getElementById('semaphoreLiveRegion').textContent =
-          `Simulador PVP actualizado para ${updatedItem.record.name}: Estado Semáforo ${updatedItem.semaphore.status} (Beneficio neto ${updatedItem.semaphore.netProfit.toFixed(2)} €).`;
+          `Simulador de precio actualizado para ${updatedItem.record.name}: ${friendlyStatus} (Beneficio neto ${updatedItem.semaphore.netProfit.toFixed(2)} €).`;
       }
     };
 
@@ -345,6 +505,7 @@
         return;
       }
       item.archived = !item.archived;
+      item.archivedAtIso = item.archived ? new Date().toISOString() : null;
       await saveTenant(t);
     };
 
@@ -359,6 +520,8 @@
       const copy = structuredClone(src);
       copy.id = 'esc-' + Date.now();
       copy.name = src.name + ' (Copia)';
+      copy.archived = false;
+      copy.archivedAtIso = null;
       t.escandallos.push(copy);
       await saveTenant(t);
     };
@@ -384,11 +547,129 @@
     });
 
     document.getElementById('btnCloneCenter').addEventListener('click', async () => {
-      const t = structuredClone(currentState.tenant);
-      t.centerId = 'center-clon-' + Math.floor(Math.random() * 900 + 100);
-      t.centerName = t.centerName + ' (Clon M4)';
-      await saveTenant(t);
+      const centers = currentState.centers || [];
+      const srcId = currentState.tenant.centerId;
+      let targetCenter = centers.find(c => c.centerId !== srcId);
+      if (!targetCenter) {
+        const createRes = await fetch('/api/centers/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ centerName: currentState.tenant.centerName + ' (Sucursal 2)' })
+        });
+        if (!createRes.ok) return;
+        const createdData = await createRes.json();
+        targetCenter = createdData.center;
+      }
+      const copyRes = await fetch('/api/centers/copy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceCenterId: srcId, targetCenterId: targetCenter.centerId })
+      });
+      if (copyRes.ok) {
+        await loadState(targetCenter.centerId);
+      }
     });
+
+    document.getElementById('btnCreateCenter').addEventListener('click', async () => {
+      const nameInput = document.getElementById('newCenterNameInput');
+      const centerName = nameInput.value.trim() || 'Nuevo Centro Estético';
+      const res = await fetch('/api/centers/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ centerName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        nameInput.value = '';
+        await loadState(data.center.centerId);
+      }
+    });
+
+    window.quickLogin = async function(email, password) {
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPassword').value = password;
+      await performLogin(email, password);
+    };
+
+    async function performLogin(email, password) {
+      const banner = document.getElementById('authStatusBanner');
+      banner.style.color = '#dc2626';
+      banner.textContent = '';
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      if (!res.ok) {
+        banner.textContent = 'Credenciales incorrectas. Verifica tu correo electrónico y contraseña.';
+        return;
+      }
+      const data = await res.json();
+      setAuthenticatedView(true, data.user);
+      const firstCenter = data.centers && data.centers.length > 0 ? data.centers[0].centerId : 'center-madrid-01';
+      await loadState(firstCenter);
+    }
+
+    document.getElementById('btnLoginSubmit').addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      await performLogin(email, password);
+    });
+
+    document.getElementById('btnRegisterSubmit').addEventListener('click', async () => {
+      const banner = document.getElementById('authStatusBanner');
+      banner.style.color = '#dc2626';
+      banner.textContent = '';
+      const displayName = document.getElementById('regDisplayName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const initialCenterName = document.getElementById('regCenterName').value.trim();
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, displayName, initialCenterName })
+      });
+      if (!res.ok) {
+        banner.textContent = 'Completa un correo electrónico y una contraseña válidos para crear tu cuenta.';
+        return;
+      }
+      const data = await res.json();
+      setAuthenticatedView(true, data.user);
+      await loadState(data.initialCenterId);
+    });
+
+    async function performLogout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      currentState = null;
+      ['#productsTable tbody', '#staffTable tbody', '#ovhTable tbody', '#escandallosList', '#archivedServicesList'].forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.innerHTML = '';
+      });
+      document.getElementById('archivedServicesList').textContent = 'Sin servicios archivados actualmente.';
+      document.getElementById('historyContainer').textContent = 'Sin cambios registrados en esta sesión.';
+      setAuthenticatedView(false, null);
+      const banner = document.getElementById('authStatusBanner');
+      banner.style.color = '#14532d';
+      banner.textContent = 'Sesión cerrada correctamente. Inicia sesión con tu cuenta para continuar.';
+      document.getElementById('loginEmail').focus();
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', performLogout);
+    document.getElementById('btnLogoutHeader').addEventListener('click', performLogout);
+
+    async function bootstrapSession() {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) {
+        setAuthenticatedView(false, null);
+        return;
+      }
+      const data = await res.json();
+      setAuthenticatedView(true, data.user);
+      const firstCenter = data.centers && data.centers.length > 0 ? data.centers[0].centerId : 'center-madrid-01';
+      await loadState(firstCenter);
+    }
+
+    bootstrapSession();
 
     document.getElementById('btnCalcDose').addEventListener('click', async () => {
       const unitType = document.getElementById('assistUnit').value;
@@ -525,6 +806,7 @@
         staffRole: document.getElementById('svcRole').value || 'Tecnico',
         pvpComercialFijado: parseFloat(document.getElementById('svcPvp').value) || 35.0,
         archived: false,
+        archivedAtIso: null,
         recipe: draftRecipe.length > 0 ? structuredClone(draftRecipe) : [{ productName: 'Cleasing Milk', cantidadServicioMl: 2 }]
       });
       await saveTenant(t);
@@ -557,8 +839,6 @@
     document.getElementById('btnClosePaywall').addEventListener('click', () => {
       document.getElementById('paywallModal').classList.remove('open');
     });
-
-    loadState();
   </script>
 </body>
 </html>
