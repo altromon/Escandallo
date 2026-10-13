@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@aisdlc/cli": "file:../AI-SDLC/packages/cli",
-    "@aisdlc/core": "file:../AI-SDLC/packages/core",
-    "@aisdlc/mcp": "file:../AI-SDLC/packages/mcp"
-  }
-}
