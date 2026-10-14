@@ -2,7 +2,7 @@
 # AUTO-GENERADO POR AI-SDLC (Cucumber Integration)
 # Origen: specs/security/requirements/sec-req-billing-001.md
 # ID Requerimiento: SEC-REQ-BILLING-001
-# Versión: 1.0.0
+# Versión: 1.1.0
 # NO EDITAR MANUALMENTE: Cualquier cambio debe realizarse en el Markdown origen.
 # ==============================================================================
 
@@ -20,7 +20,7 @@ Feature: Integridad transaccional de cuota freemium y autenticidad de eventos de
     And las 4 peticiones restantes son rechazadas con código HTTP 402
     And se registra un evento de seguridad por intento de desbordamiento concurrente de cuota
 
-  Scenario Outline: Rechazo de webhooks de Stripe manipulados, sin firma o repetidos
+  Scenario Outline: Rechazo de webhooks de Stripe manipulados, sin firma, repetidos o con metadatos alterados
     Given el endpoint de webhooks de Stripe recibe un evento "<tipo_evento>" para el centro "C_FREE"
     When la cabecera Stripe-Signature presenta la anomalía "<anomalia_firma>" con antigüedad de <edad_segundos> segundos
     Then el sistema rechaza el webhook con estado HTTP <codigo_http>
@@ -28,8 +28,21 @@ Feature: Integridad transaccional de cuota freemium y autenticidad de eventos de
     And se emite una alerta con severidad "SECURITY" en el registro de auditoría
 
     Examples:
-      | tipo_evento                    | anomalia_firma              | edad_segundos | codigo_http |
-      | checkout.session.completed     | firma_hmac_invalida         | 10            | 400         |
-      | invoice.paid                   | cabecera_ausente            | 5             | 400         |
-      | checkout.session.completed     | timestamp_expirado_replay   | 600           | 400         |
-      | customer.subscription.updated  | event_id_duplicado          | 15            | 200         |
+      | tipo_evento                    | anomalia_firma                    | edad_segundos | codigo_http |
+      | checkout.session.completed     | firma_hmac_invalida               | 10            | 400         |
+      | invoice.paid                   | cabecera_ausente                  | 5             | 400         |
+      | checkout.session.completed     | timestamp_expirado_replay         | 600           | 400         |
+      | checkout.session.completed     | payload_raw_modificado_en_stream  | 12            | 400         |
+      | customer.subscription.updated  | event_id_duplicado                | 15            | 200         |
+
+  @idempotence
+  Scenario Outline: Análisis de frontera en límite gratuito de escandallos activos (N-1, N, N+1), cuerpo crudo de webhook (64KB) y ventana HMAC (300s)
+    Given el centro "C_FREE" en plan gratuito posee <activos_actuales> escandallos activos y recibe un webhook de <payload_kb> KB con antigüedad HMAC de <edad_hmac_seg> segundos
+    When solicita activar un escandallo adicional o procesar el webhook en la frontera del umbral
+    Then la activación de escandallo responde con HTTP <http_activacion> y el webhook con HTTP <http_webhook>
+
+    Examples:
+      | activos_actuales | payload_kb | edad_hmac_seg | http_activacion | http_webhook |
+      | 0                | 63         | 299           | 201             | 200          |
+      | 1                | 64         | 300           | 201             | 200          |
+      | 2                | 65         | 301           | 402             | 400          |

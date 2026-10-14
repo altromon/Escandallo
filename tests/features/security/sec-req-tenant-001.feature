@@ -2,7 +2,7 @@
 # AUTO-GENERADO POR AI-SDLC (Cucumber Integration)
 # Origen: specs/security/requirements/sec-req-tenant-001.md
 # ID Requerimiento: SEC-REQ-TENANT-001
-# Versión: 1.0.0
+# Versión: 1.1.0
 # NO EDITAR MANUALMENTE: Cualquier cambio debe realizarse en el Markdown origen.
 # ==============================================================================
 
@@ -20,7 +20,7 @@ Feature: Prevención de ataques IDOR/BOLA cross-tenant en catálogos e informes
     And el catálogo del centro "C_PROPIO" permanece con 0 productos copiados
     And se registra un evento de auditoría con severidad "SECURITY" y motivo "CROSS_TENANT_IDOR_ATTEMPT"
 
-  Scenario Outline: Bloqueo de acceso IDOR sobre endpoints de costes, escandallos e informes
+  Scenario Outline: Bloqueo de acceso IDOR sobre endpoints HTTP, circuitos Blazor y pool Npgsql
     Given el usuario autenticado "U_ATACANTE" tiene sesión activa en el centro "C_PROPIO"
     When "U_ATACANTE" invoca la operación "<operacion>" apuntando al recurso "<recurso_ajeno>" del centro "C_AJENO"
     Then el sistema deniega la petición con código HTTP <codigo_http>
@@ -28,8 +28,21 @@ Feature: Prevención de ataques IDOR/BOLA cross-tenant en catálogos e informes
     And se emite una traza de seguridad con nivel "<nivel_log>"
 
     Examples:
-      | operacion                        | recurso_ajeno            | codigo_http | nivel_log |
-      | GET /costs                       | center_id=C_AJENO        | 403         | SECURITY  |
-      | PATCH /costs/cost-uuid-ajeno     | cost_id=cost-uuid-ajeno  | 404         | SECURITY  |
-      | POST /reports/export-pdf         | center_id=C_AJENO        | 403         | SECURITY  |
-      | POST /reports/export-xlsx        | center_id=C_AJENO        | 403         | SECURITY  |
+      | operacion                              | recurso_ajeno            | codigo_http | nivel_log |
+      | GET /costs                             | center_id=C_AJENO        | 403         | SECURITY  |
+      | PATCH /costs/cost-uuid-ajeno           | cost_id=cost-uuid-ajeno  | 404         | SECURITY  |
+      | POST /reports/export-pdf               | center_id=C_AJENO        | 403         | SECURITY  |
+      | POST /reports/export-xlsx              | center_id=C_AJENO        | 403         | SECURITY  |
+      | WSS /_blazor InvokeSaveEscandallo      | parameter_center=C_AJENO | 403         | SECURITY  |
+
+  Scenario Outline: Análisis de frontera en validación dual de titularidad al copiar catálogos entre centros (M4) y aislamiento SET LOCAL en pool Npgsql
+    Given un usuario autenticado posee relación "<relacion_origen>" sobre el centro origen y "<relacion_destino>" sobre el centro destino en una conexión reutilizada del pool Npgsql
+    When solicita ejecutar la copia de catálogo M4 entre ambos centros bajo política FORCE ROW LEVEL SECURITY
+    Then el servidor responde con código HTTP <codigo_http>
+
+    Examples:
+      | relacion_origen | relacion_destino | codigo_http |
+      | OWNER           | OWNER            | 200         |
+      | OWNER           | NONE             | 403         |
+      | NONE            | OWNER            | 403         |
+      | NONE            | NONE             | 403         |

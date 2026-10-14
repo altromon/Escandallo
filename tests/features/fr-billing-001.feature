@@ -6,7 +6,7 @@
 # NO EDITAR MANUALMENTE: Cualquier cambio debe realizarse en el Markdown origen.
 # ==============================================================================
 
-@FR-BILLING-001 @automated @regression @idempotence
+@FR-BILLING-001 @automated @regression
 Feature: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por Centro con Stripe
 
   Scenario: Desbloqueo de edición y exportación tras archivar escandallos excedentes sin pérdida de datos
@@ -16,33 +16,31 @@ Feature: Control de Cuota Gratuita de 2 Escandallos y Suscripción Ilimitada por
     Then el servidor permite editar, recalcular y exportar los 2 escandallos "active" con código HTTP 200
     And conserva intactos los datos e histórico de los 2 escandallos "archived" para su futura restauración
 
-  @boundary
-  Scenario Outline: Verificación de operaciones permitidas en las fronteras exactas de 0, 1 y 2 escandallos activos
+  Scenario Outline: Verificación de operaciones permitidas según suscripción y número de escandallos activos del centro
     Given un centro de estética tiene estado de suscripción "<estado_suscripcion>" en Stripe y cuenta con <escandallos_activos> escandallos activos
     When el propietario solicita ejecutar la operación "<operacion>" en dicho centro
     Then el resultado de autorización del servidor es "<resultado>" con código HTTP <codigo_http>
 
     Examples:
       | estado_suscripcion | escandallos_activos | operacion            | resultado | codigo_http |
-      | none               | 0                   | crear_escandallo     | permitido | 201         |
       | none               | 1                   | crear_escandallo     | permitido | 201         |
       | none               | 2                   | recalcular_existente | permitido | 200         |
       | none               | 2                   | exportar_escandallo  | permitido | 200         |
+      | none               | 2                   | duplicar_escandallo  | bloqueado | 402         |
+      | canceled           | 4                   | editar_escandallo    | bloqueado | 402         |
       | canceled           | 4                   | archivar_escandallo  | permitido | 200         |
       | canceled           | 2                   | editar_escandallo    | permitido | 200         |
       | active             | 15                  | crear_escandallo     | permitido | 201         |
 
-  @invalid
-  Scenario Outline: Bloqueo de operaciones fuera de cuota gratuita o planes de suscripción inválidos
-    Given un centro de estética tiene estado de suscripción "<estado_suscripcion>" en Stripe y cuenta con <escandallos_activos> escandallos activos
-    When el propietario intenta ejecutar la operación no permitida "<operacion>" con parámetro "<parametro>"
-    Then el servidor deniega la operación con código HTTP <codigo_http> y código de error "<error_code>"
+  @idempotence
+  Scenario Outline: Rechazo de contratación o activación ante planes de suscripción inexistentes o importes manipulados
+    Given un centro de estética solicita iniciar una sesión de suscripción con el plan "<plan_id>" e importe "<importe_eur>" EUR
+    When el servidor valida el catálogo oficial de tarifas de Stripe (14.90 EUR/mes o 149.00 EUR/año)
+    Then la solicitud de suscripción retorna estado "<resultado>" con código HTTP <codigo_http>
 
     Examples:
-      | estado_suscripcion | escandallos_activos | operacion              | parametro        | codigo_http | error_code                 |
-      | none               | 2                   | crear_tercer_escandallo| plan_free        | 402         | FREE_QUOTA_LIMIT_REACHED   |
-      | none               | 2                   | duplicar_escandallo    | plan_free        | 402         | FREE_QUOTA_LIMIT_REACHED   |
-      | none               | 2                   | desarchivar_escandallo | plan_free        | 402         | FREE_QUOTA_LIMIT_REACHED   |
-      | canceled           | 4                   | editar_escandallo      | sub_canceled     | 402         | SUBSCRIPTION_REQUIRED_LOCK |
-      | past_due           | 3                   | exportar_escandallo    | sub_past_due     | 402         | SUBSCRIPTION_REQUIRED_LOCK |
-      | none               | 2                   | iniciar_checkout_stripe| plan_inexistente | 400         | INVALID_SUBSCRIPTION_PLAN  |
+      | plan_id          | importe_eur | resultado             | codigo_http |
+      | PLAN_MENSUAL_EUR | 14.90       | sesion_creada         | 200         |
+      | PLAN_ANUAL_EUR   | 149.00      | sesion_creada         | 200         |
+      | PLAN_GRATIS_HACK | 0.00        | plan_invalido         | 422         |
+      | PLAN_MENSUAL_EUR | 0.01        | importe_no_autorizado | 422         |

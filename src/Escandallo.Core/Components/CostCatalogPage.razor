@@ -1,0 +1,27 @@
+@using Microsoft.AspNetCore.Components
+@namespace Escandallo.Core.Components
+
+<section aria-labelledby="catalogHeading" data-active-tab="@ActiveCategoryTab">
+    <h1 id="catalogHeading">2. Catálogo de costes del centro</h1>
+    <div role="tablist" class="form-row" aria-label="Categorías de costes del centro">
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Productos")" class="btn touch-target-44">Cosméticos y productos</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Personal")" class="btn btn-secondary touch-target-44">Personal del centro</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "GastosGenerales")" class="btn btn-secondary touch-target-44">Gastos fijos del local</button>
+        <button role="tab" aria-selected="@(ActiveCategoryTab == "Parametros")" class="btn btn-secondary touch-target-44">Impuestos y margen objetivo</button>
+    </div>
+    <div role="region" class="dose-buttons-grid" aria-label="Equivalencia de dosis: pulsaciones, gotas, cucharaditas o viales a ml/g">
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 pulsación equivale a 2 ml">1 Pulsación (@PulsacionMl ml)</button>
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 gota equivale a 0.05 ml">1 Gota (@GotaMl ml)</button>
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 cucharadita equivale a 5 ml">1 Cucharadita (@CucharaditaMl ml)</button>
+        <button type="button" class="btn btn-secondary touch-target-44" aria-label="1 monodosis equivale a 2 ml">1 Monodosis (@AmpollaVialMl ml)</button>
+        <button type="button" class="btn touch-target-44" style="grid-column: 1 / -1;" aria-label="Cargar catálogo de ejemplo en 1 clic">Cargar catálogo de ejemplo</button>
+    </div>
+</section>
+
+@code {
+    [Parameter] public string ActiveCategoryTab { get; set; } = "Productos";
+    [Parameter] public decimal GotaMl { get; set; } = 0.05m;
+    [Parameter] public decimal PulsacionMl { get; set; } = 2.0m;
+    [Parameter] public decimal CucharaditaMl { get; set; } = 5.0m;
+    [Parameter] public decimal AmpollaVialMl { get; set; } = 2.0m;
+}

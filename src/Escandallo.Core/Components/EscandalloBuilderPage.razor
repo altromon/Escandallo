@@ -1,0 +1,98 @@
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using Microsoft.AspNetCore.Components
+@namespace Escandallo.Core.Components
+
+<section id="escandallosSection" class="point-1-full-width" aria-labelledby="escandallosHeading">
+    <div class="section-header-row">
+        <h1 id="escandallosHeading">1. Calculadora de servicios y semáforo de rentabilidad</h1>
+        <div class="bulk-download-actions" role="group" aria-label="Descargar informes de todos los servicios de un golpe">
+            <a id="btnDownloadAllPdf" href="/api/reports/pdf" class="touch-target-44">Descargar PDF de todos los servicios</a>
+            <a id="btnDownloadAllXlsx" href="/api/reports/xlsx" class="touch-target-44">Descargar XLSX de todos los servicios</a>
+        </div>
+    </div>
+    <div class="recipe-dynamic-list" role="region" aria-label="Productos utilizados en el servicio" data-recipe-count="@RecipeLinesCount">
+        <button type="button" class="touch-target-44" aria-label="Añadir cosmético al servicio">Añadir producto al servicio</button>
+    </div>
+    <div class="pvp-simulator-panel" role="status" aria-live="polite" aria-atomic="true">
+        <span class="pvp-recomendado">Precio recomendado (@RecommendedPvp.ToString("0.00") €) frente a Precio de venta al público (@CommercialPvp.ToString("0.00") €)</span>
+        <span class="margin-semaphore-badge">@ResolveFriendlySemaphoreMessage()</span>
+    </div>
+    <div id="escandallosList" role="region" aria-label="Servicios activos en uso">
+        @foreach (var svc in Services.Where(s => !s.Archived))
+        {
+            <details class="service-card-collapsible" aria-expanded="false" data-service-id="@svc.Id">
+                <summary class="service-collapsed-row touch-target-44" aria-label="Resumen en una línea de @svc.Name">
+                    <strong class="service-col-name">@svc.Name</strong>
+                    <span class="desktop-tablet-only service-col-time">@svc.DuracionMinutos min</span>
+                    <span class="desktop-tablet-only service-col-staff">@svc.StaffRole</span>
+                    <span class="service-col-cost">Coste total: @ResolveEstimatedCost(svc).ToString("0.00") €</span>
+                    <span class="service-col-pvp">Precio de venta: @svc.PvpComercialFijado.ToString("0.00") €</span>
+                    <span class="service-col-semaphore">@ResolveFriendlySemaphoreMessage()</span>
+                    <span class="desktop-tablet-only service-col-actions">
+                        <button type="button" class="touch-target-44" aria-label="Crear una copia de @svc.Name">Duplicar servicio</button>
+                        <button type="button" class="touch-target-44" aria-label="Archivar @svc.Name">Archivar servicio</button>
+                    </span>
+                </summary>
+                <div class="service-expanded-content">
+                    <ul class="service-products-list">
+                        @foreach (var item in svc.Recipe)
+                        {
+                            <li>@item.ProductName — @item.CantidadServicioMl.ToString("0.##") ml</li>
+                        }
+                    </ul>
+                </div>
+            </details>
+        }
+    </div>
+</section>
+
+<section aria-labelledby="historyHeading">
+    <h2 id="historyHeading">4. Histórico de servicios archivados y actualizaciones de precios</h2>
+    <div id="archivedServicesList" role="region" aria-label="Servicios archivados ordenados por fecha de archivado descendente">
+        @foreach (var archivedSvc in Services.Where(s => s.Archived).OrderByDescending(s => s.ArchivedAtIso, StringComparer.Ordinal))
+        {
+            <details class="archived-service-card service-card-collapsible" aria-expanded="false" data-service-id="@archivedSvc.Id" data-archived-at="@archivedSvc.ArchivedAtIso">
+                <summary class="service-collapsed-row touch-target-44">
+                    <strong class="service-col-name">@archivedSvc.Name</strong>
+                    <span class="desktop-tablet-only">@archivedSvc.DuracionMinutos min · @archivedSvc.StaffRole</span>
+                    <span class="service-col-cost">Coste total: @ResolveEstimatedCost(archivedSvc).ToString("0.00") €</span>
+                    <span class="service-col-pvp">Precio de venta: @archivedSvc.PvpComercialFijado.ToString("0.00") €</span>
+                    <span class="service-state-badge">Archivado (@archivedSvc.ArchivedAtIso)</span>
+                    <button type="button" class="touch-target-44" aria-label="Restaurar servicio @archivedSvc.Name a la calculadora principal">Restaurar servicio</button>
+                </summary>
+                <ul class="service-products-list">
+                    @foreach (var item in archivedSvc.Recipe)
+                    {
+                        <li>@item.ProductName — @item.CantidadServicioMl.ToString("0.##") ml</li>
+                    }
+                </ul>
+            </details>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int RecipeLinesCount { get; set; } = 3;
+    [Parameter] public decimal CommercialPvp { get; set; } = 32.00m;
+    [Parameter] public decimal RecommendedPvp { get; set; } = 23.96m;
+    [Parameter] public string SemaphoreState { get; set; } = "Rentabilidad óptima";
+    [Parameter] public IReadOnlyList<EscandalloServiceRecord> Services { get; set; } = new List<EscandalloServiceRecord>
+    {
+        new("esc-001", "Higiene Facial", 60, "Técnico", 32.00m, false, new List<ProductRecipeLine> { new("Leche Limpiadora", 2m), new("Mascarilla de Colágeno", 4m) }, null),
+        new("esc-002", "Peeling Facial", 30, "Doctor", 28.00m, false, new List<ProductRecipeLine> { new("Leche Limpiadora", 2m), new("Peeling Reafirmante", 1m) }, null),
+        new("esc-003", "Tratamiento Oxigenante", 45, "Técnico", 30.00m, true, new List<ProductRecipeLine> { new("Sérum Oxigenante", 2m) }, "2026-10-08T09:00:00Z"),
+        new("esc-004", "Radiofrecuencia Facial", 50, "Enfermero", 45.00m, true, new List<ProductRecipeLine> { new("Gel Conductor", 5m) }, "2026-10-09T10:30:00Z")
+    };
+
+    private static decimal ResolveEstimatedCost(EscandalloServiceRecord svc) =>
+        Math.Round(svc.DuracionMinutos * 0.25m + svc.Recipe.Count * 1.40m, 2, MidpointRounding.AwayFromZero);
+
+    private string ResolveFriendlySemaphoreMessage() =>
+        CommercialPvp >= RecommendedPvp
+            ? "🟢 Rentabilidad óptima: alcanzas tu margen objetivo"
+            : (CommercialPvp >= 25.00m
+                ? "🟡 Margen ajustado: ganas menos de tu objetivo"
+                : "🔴 Atención: estás perdiendo dinero con este precio");
+}

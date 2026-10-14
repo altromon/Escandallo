@@ -1,65 +1,56 @@
 ---
 id: ADR-004-EXACT-DECIMAL-AND-CASCADE-ENGINE
 type: architecture-decision-record
-title: "Aritmética Decimal Exacta en C# (System.Decimal 128-bit / NUMERIC) y Recálculo Transaccional Síncrono en Cascada con Snapshots Inmutables"
+title: "Aritmética Financiera Exacta de 128 Bits (System.Decimal / NUMERIC 18,6) y Motor Transaccional Síncrono de Cascada"
 status: proposed
 version: "1.1.0"
 schema-version: "1.0"
 deciders:
   - "agent-system-architect"
-  - "Product Owner"
-decision-date: "2026-10-05"
+decision-date: "2026-10-08"
 affects-components:
   - CMP-COST-ENGINE-001
+  - CMP-WEB-UI-001
+  - CMP-IAM-TENANT-001
 supersedes: null
 superseded-by: null
 ---
 
-# ADR-004: Aritmética Decimal Exacta en C# (System.Decimal 128-bit / NUMERIC) y Recálculo Transaccional Síncrono en Cascada con Snapshots Inmutables
+# ADR-004: Aritmética Financiera Exacta de 128 Bits (System.Decimal / NUMERIC 18,6) y Motor Transaccional Síncrono de Cascada
 
-## 1. Context and Problem Statement
+## 1. Contexto y Planteamiento del Problema
 
-Las fórmulas financieras del dominio (`BR-CALC-FORMULAS-001`) combinan micro-costes por minuto de aparatología y gastos generales con dosis fraccionarias de cosméticos en gramos o mililitros, porcentajes de merma (`M5`), márgenes porcentuales y tipos de IVA. Asimismo, cuando un usuario modifica cualquier coste base o parámetro global, el sistema debe mostrar antes una previsualización de impacto (*"Este cambio recalculará N escandallos"*, `M3`) y, al confirmar, recalcular en cascada todos los escandallos afectados guardando histórico inmutable solo si el coste estaba en uso activo (`BR-RECALC-HISTORY-001`).
+Las fórmulas de escandallo estético (`BR-CALC-FORMULAS-001`) dividen precios de envases cosméticos por dosis milimétricas (ej. `1,5 ml` de un vial de `50 ml` con `5%` de merma), suman amortizaciones por minuto y calculan márgenes netos descontando IVA y comisiones TPV. El uso de coma flotante binaria (`double`/`float`) introduce errores de representación (ej. `0.1 + 0.2 != 0.3`) que pueden provocar cambios espurios en el Semáforo de Erosión de Margen o generar snapshots históricos falsos cuando el coste real no ha variado (`BR-RECALC-HISTORY-001`). Asimismo, el motor `System.Decimal` debe estar protegido contra entradas extremas que provoquen `OverflowException` o `DivideByZeroException` (`SEC-REQ-XLSX-001`), y el recálculo en cascada debe ser resistente a denegación de servicio asimétrica (`SEC-REQ-DOS-001`).
 
-## 2. Considered Technology Options
+## 2. Opciones Tecnológicas Consideradas
 
-1. **Opción A (Elegida): Aritmética Decimal Exacta Nativa en C# (`System.Decimal` de 128 bits + PostgreSQL `NUMERIC(14,8)`) y Recálculo Síncrono en Transacción ACID Única**:
-   - **Precisión**: Métodos puros de dominio utilizando el tipo nativo `decimal` de C# con redondeo `MidpointRounding.AwayFromZero` a 8 decimales (`Math.Round(val, 8, MidpointRounding.AwayFromZero)`), garantizando paridad exacta al octavo decimal con `Escandallo.xlsx`.
-   - **Recálculo en Cascada Síncrono**: Dado que un centro de estética típico tiene entre 10 y 150 servicios en su carta y cada receta está acotada a $\le 100$ líneas (`SEC-REQ-DOS-001`), recalcular 150 escandallos en memoria en el CLR de `.NET` y actualizar sus filas en PostgreSQL toma **$< 5\text{ ms}$** dentro de una única transacción ACID.
-2. **Opción B: Coma Flotante Binaria IEEE 754 (`double` / `float` en C# o `DOUBLE PRECISION` en SQL)**:
-   - **Contras**: Produce errores de representación binaria (`0.1 + 0.2 != 0.3`) inaceptables en informes ejecutivos y comparativas con la hoja Excel de referencia.
-3. **Opción C: Recálculo Asíncrono Eventual mediante Colas Externas (Redis/RabbitMQ)**:
-   - **Contras**: Introduce inconsistencia temporal en la interfaz y requiere procesos adicionales que encarecen la memoria del despliegue (`ADR-001`).
+1. **Opción A (Recomendada — `System.Decimal` 128-bit con Guardas de Rango en C# + `NUMERIC(18,6)` en PostgreSQL + Cascada Transaccional Síncrona Acotada a $\le 200$ Escandallos y $\le 100$ Líneas por Servicio)**:
+   - Todos los cálculos intermedios operan en base 10 exacta con 6 decimales de precisión interna (`MidpointRounding.AwayFromZero`) y 2 decimales en presentación monetaria, precedidos por guardas deterministas de dominio. El recálculo en cascada se ejecuta síncronamente dentro de una transacción ACID en PostgreSQL acotada a `200` escandallos por insumo (`< 2000 ms`) y `30 mutaciones/minuto` por inquilino.
+2. **Opción B (Aritmética en Enteros de Céntimos `long` + Cola Asíncrona Externa con Redis/RabbitMQ)**:
+   - Trabajar en céntimos enteros pierde precisión en costes unitarios por mililitro o segundo de aparatología; añadir Redis/RabbitMQ incrementa el consumo de RAM y el coste del VPS sin necesidad real para volúmenes de centros de estética ($\le 200$ tratamientos por centro).
 
-## 3. Decision Outcome
+## 3. Decisión Adoptada
 
-Se adopta la **Opción A (Motor de Dominio Puro en C# con `System.Decimal`, Tipos `NUMERIC` en PostgreSQL y Recálculo en Cascada Síncrono Transaccional)**.
+Se elige la **Opción A (`System.Decimal` 128-bit con Guardas de Rango + `NUMERIC(18,6)` + Cascada Transaccional Síncrona con Historial Condicional)**.
 
-### Reglas de Ejecución del Motor (`CMP-COST-ENGINE-001`)
+**Justificación técnica (`SEC-REQ-XLSX-001`, `SEC-REQ-DOS-001`)**:
+- **Determinismo Absoluto**: `System.Decimal` en .NET y `NUMERIC(18,6)` en PostgreSQL representan fracciones en base 10 de forma exacta, garantizando que $\Delta \text{Coste} = 0$ cuando se editan únicamente metadatos cosméticos (cumpliendo estrictamente `BR-RECALC-HISTORY-001` y `FR-HIST-001`).
+- **Prevención de `OverflowException` y `DivideByZeroException` (`SEC-REQ-XLSX-001`)**: Antes de operar en `System.Decimal` o persistir en `NUMERIC(18,6)`, el motor rechaza con `422 Unprocessable Entity` entradas no numéricas (`NaN`/`Infinity`), negativas, divisores `0` o valores que excedan las cotas operativas (`PurchasePrice > 1_000_000m`, `UnitsPerPackage < 0.0001m`, `WastePct > 100m`).
+- **Experiencia de Usuario Inmediata (M3) y Protección Anti-DoS (`SEC-REQ-DOS-001`)**: La usuaria visualiza el impacto antes de confirmar (`PreviewCascadeImpactAsync`) y actualiza todos sus tratamientos en `< 2000 ms`. Las cotas duras de `100 líneas de coste máximas por escandallo` (`422`), `200 escandallos vinculados por insumo` y `30 mutaciones de catálogo por minuto` (`429`) aseguran un techo determinista de CPU y memoria.
 
-1. **Endpoint de Previsualización de Impacto (`M3`)**: Devuelve instantáneamente el número $N$ de escandallos afectados y cuántos de ellos cambiarán de estado en el **Semáforo de Erosión de Margen (`OPTIMO`/`ALERTA`/`CRITICO`, M2)** con respecto a su `PVP Comercial Fijado`.
-2. **Transacción Atómica de Recálculo e Histórico Condicional (`BR-RECALC-HISTORY-001`)**:
-   - Si $N = 0$ (el coste no está vinculado a ningún escandallo), se actualiza el coste directamente sin insertar registro en `cost_history`.
-   - Si $N \ge 1$, dentro de la misma transacción `BEGIN ... COMMIT`:
-     1. Se inserta el snapshot anterior del coste en `cost_history (append-only)`.
-     2. Se actualiza el registro en `costs`.
-     3. Se cargan los $N$ escandallos vinculados, se insertan sus estados previos en `escandallo_history (append-only)` con incremento de versión (`version + 1`), y se actualizan sus importes con precisión `decimal`.
-3. **Protección de Integridad Histórica (`M1`)**: Se impide el borrado físico (`409 Conflict`) si existen filas vinculadas en histórico o escandallos, aplicando baja lógica (`status = 'archived'`).
+## 4. Consecuencias
 
-## 4. Consequences
-
-- **Positive**:
-  - Cero dependencias externas para cálculo financiero gracias a `System.Decimal` de C#.
-  - Consistencia inmediata 100% determinista tras editar cualquier coste.
-  - Métodos de cálculo puros y concisos ($\le 40$ líneas, complejidad ciclomática $\le 10$), verificados con `xUnit`.
-- **Negative / Trade-offs**:
-  - Se protege el endpoint de mutación de costes con el límite de `30 mutaciones/minuto` por inquilino (`SEC-REQ-DOS-001`).
+- **Positivas**:
+  - Cero discrepancias de redondeo y cero caídas por `OverflowException` entre simulación en pantalla, base de datos e informes ejecutivos `.pdf`/`.xlsx`.
+  - Arquitectura libre de brokers de mensajería externos en el MVP.
+- **Negativas / Compensaciones (Trade-offs)**:
+  - Queda prohibido por regla de compilación/revisión el uso de `double` o `float` en cualquier clase del espacio de nombres `Escandallo.Domain`.
 
 ---
 
-## 5. Revision History and Version Control
+## 5. Historial de Revisiones y Control de Versiones
 
-| Version | Date | Deciders | Decision Status | Reference (Change/PR) |
+| Versión | Fecha | Decisores | Estado de la Decisión | Referencia (Change/PR) |
 | :--- | :--- | :--- | :--- | :--- |
-| **1.0.0** | 2026-10-05 | agent-system-architect | Formal decision proposal | ARCH-INIT-001 |
-| **1.1.0** | 2026-10-05 | Product Owner, agent-system-architect | Adopción de System.Decimal nativo de C# (.NET) | CHG-001-ESCANDALLO-MVP |
+| **1.0.0** | 2026-04-12 | `agent-system-architect` | Propuesta formal aceptada | `chg-001-escandallo-mvp` |
+| **1.1.0** | 2026-10-08 | `agent-system-architect` | Incorporación de guardas anti-`OverflowException` en `System.Decimal` (`SEC-REQ-XLSX-001`), cota de 100 líneas/servicio y 30 mutaciones/min (`SEC-REQ-DOS-001`) | `chg-001-escandallo-mvp` |

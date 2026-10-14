@@ -3,7 +3,7 @@ id: SEC-REQ-OBS-001
 type: security-requirement
 title: "RBAC Estricto para Mantenedor, Redactado Automático PII/Secretos en Logs DEBUG y Anti-Log-Injection"
 status: draft
-version: "1.0.0"
+version: "1.1.0"
 schema-version: "1.0"
 category: security
 priority: critical
@@ -28,10 +28,10 @@ superseded-by: null
 
 ## 1. Normative Statement
 
-Para mitigar `ABUSE-PRIV-OBS-001` (OWASP ASVS V4.1, V7.1, V7.2) sobre la consola y tubería de observabilidad (`UC-OBSERVABILITY-001`), el sistema **DEBE** garantizar:
-1. **Inmutabilidad de Rol en API Pública y RBAC de Mantenedor**: Los endpoints públicos de registro y perfil de usuario **DEBEN** ignorar o rechazar cualquier atributo `role` enviado por el cliente (prevención de *Mass Assignment*). La asignación del rol `ACT-MAINTAINER-001` **SOLO** podrá realizarse mediante provisión administrativa interna y su acceso exigirá verificación explícita de rol en cada petición.
-2. **Filtro de Redactado Inmutable Incluso en Nivel `DEBUG`**: Cuando el mantenedor cambie en caliente la granularidad a `DEBUG`, el serializador de logs y trazas **DEBE** aplicar un filtro de ofuscación inmutable (`[REDACTED]`) sobre cualquier campo sensible (`authorization`, `cookie`, `token`, `credential_hash`, `stripe_signature`, `card_number`, `iban`) antes de escribir en disco o exportar en `JSON`/`CSV`/`OTLP`.
-3. **Saneamiento Anti-Log-Injection e Integridad de Auditoría**: Todas las entradas de log **DEBEN** codificarse como objetos JSON estructurados de una sola línea, escapando caracteres de control (`\r`, `\n`, `\t`), y todo cambio en caliente del nivel de log **DEBE** generar un registro de auditoría inmutable con severidad `SECURITY` que nunca pueda ser deshabilitado.
+Para mitigar `ABUSE-PRIV-OBS-001` (OWASP ASVS V4.1, V7.1, V7.2) sobre `MaintainerObservabilityPage.razor` (`CMP-WEB-UI-001`) y el subsistema `Serilog` + `OpenTelemetry .NET` (`CMP-OBS-TELEMETRY-001` en `SEC-ENC-DATA-OBS-001`), el sistema **DEBE** garantizar:
+1. **Inmutabilidad de Rol en ASP.NET Core Identity y Autorización en Blazor**: Los endpoints y formularios públicos de registro/perfil **DEBEN** ignorar o rechazar cualquier atributo `role` enviado por el cliente (*Mass Assignment*), y `MaintainerObservabilityPage.razor` / `IObservabilityControlService` **DEBEN** exigir `[Authorize(Roles = "Maintainer")]` verificando el `ClaimsPrincipal` en servidor en cada invocación.
+2. **Filtro `PiiAndSecretRedactingPolicy` Inmutable y Cota de Destructuración en `Serilog`**: Cuando `LoggingLevelSwitch` se conmute en caliente a `DEBUG`, `Serilog` **DEBE** limitar la destructuración (`Destructuring.ToMaximumDepth(3)`, `ToMaximumStringLength(1024)`) y aplicar `PiiAndSecretRedactingPolicy` (`[REDACTED]`) tanto sobre propiedades estructuradas (`authorization`, `cookie`, `token`, `credential_hash`, `stripe_signature`, `card_number`, `iban`) como sobre cadenas de conexión `Npgsql` (`Password=...`) y claves `whsec_` dentro de `Exception.Message` antes de exportar a `JSON`/`CSV`/`OTLP`.
+3. **Saneamiento Anti-Log-Injection y Canal Inmutable para Eventos `SECURITY`**: Todas las entradas de log **DEBEN** serializarse como JSON de una sola línea escapando `\r`, `\n` y `\t`, y los eventos de severidad `SECURITY` (incluido cada cambio de `LoggingLevelSwitch`) **DEBEN** persistirse en un canal/almacén protegido contra evicción por rotación de logs `DEBUG`/`INFO`.
 
 ## 2. Acceptance Criteria (Gherkin)
 
@@ -49,7 +49,7 @@ Feature: Blindaje del rol mantenedor, ofuscación de secretos en modo DEBUG y pr
     Then los campos de autorización, cookies y firmas aparecen reemplazados por el marcador "[REDACTED]"
     And ningún token de sesión en claro está presente en el archivo exportado
 
-  Scenario Outline: Bloqueo de escalada de privilegios a mantenedor e intentos de inyección de logs
+  Scenario Outline: Bloqueo de escalada de privilegios a mantenedor, fugas en excepciones e inyección de logs
     Given un atacante externo o inquilino estándar envía una petición con el vector "<vector_ataque>"
     When el subsistema de seguridad y telemetría procesa la solicitud con payload "<payload_malicioso>"
     Then el sistema ejecuta la respuesta defensiva "<respuesta_defensiva>" con código HTTP <codigo_http>
@@ -60,6 +60,18 @@ Feature: Blindaje del rol mantenedor, ofuscación de secretos en modo DEBUG y pr
       | mass_assignment_registro_rol         | role=maintainer                          | ignorar_campo_y_denegar_privilegio        | 403         |
       | acceso_endpoint_exportacion_logs     | GET /admin/observability/export          | denegar_acceso_rbac_no_autorizado         | 403         |
       | inyeccion_crlf_en_campo_busqueda     | servicio\r\n{"level":"INFO","faked":1}   | escapar_saltos_de_linea_en_json_estruct   | 400         |
+      | excepcion_npgsql_con_password_debug  | Host=db;Password=Secret123;              | redactar_credencial_en_exception_message  | 500         |
+
+  Scenario Outline: Verificación de frontera de ofuscación inmutable en todos los niveles de severidad, profundidad de destructuración (Depth 3) y caducidad TTL de DEBUG
+    Given el subsistema de telemetría opera en nivel "<nivel_log>" con profundidad de objeto <profundidad_obj> tras <minutos_transcurridos> minutos desde la activación de DEBUG (TTL 60 min)
+    When procesa un evento con el campo sensible "<campo_sensible>"
+    Then el valor registrado es "<valor_registrado>" y el nivel efectivo del sistema es "<nivel_efectivo>"
+
+    Examples:
+      | nivel_log | profundidad_obj | minutos_transcurridos | campo_sensible   | valor_registrado | nivel_efectivo |
+      | DEBUG     | 2               | 59                    | authorization    | [REDACTED]       | DEBUG          |
+      | DEBUG     | 3               | 60                    | stripe_signature | [REDACTED]       | INFO           |
+      | SECURITY  | 4               | 61                    | credential_hash  | [REDACTED]       | INFO           |
 ```
 
 ## 3. Revision History
@@ -67,3 +79,4 @@ Feature: Blindaje del rol mantenedor, ofuscación de secretos en modo DEBUG y pr
 | Version | Date | Author | Description |
 | :--- | :--- | :--- | :--- |
 | 1.0.0 | 2026-10-05 | agent-threat-modeler | Especificación inicial de seguridad sobre RBAC de mantenedor y tubería de logs. |
+| 1.1.0 | 2026-10-08 | agent-threat-modeler | Auditoría técnica .NET 10 LTS + Serilog: límite `ToMaximumDepth(3)`, redacción en `Exception.Message` y protección anti-evicción de eventos `SECURITY`. |
